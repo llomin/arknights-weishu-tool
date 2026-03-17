@@ -8,11 +8,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   gap: 20px;
-  align-items: end;
+  align-items: center;
 }
 
 .headerCopy {
   min-width: 0;
+  display: grid;
+  align-content: center;
 }
 
 .eyebrow {
@@ -74,72 +76,86 @@
   background: rgba(255, 255, 255, 0.96);
 }
 
-.toolbarRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.toolbarStat {
-  display: inline-flex;
-  align-items: center;
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid rgba(88, 104, 134, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
 .ghostButton,
 .resetButton {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
+  display: inline-flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 12px;
   cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 18px rgba(62, 83, 118, 0.08);
   transition:
     transform 180ms ease,
     border-color 180ms ease,
     background 180ms ease,
-    color 180ms ease;
+    color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .ghostButton {
-  border: 1px solid rgba(88, 104, 134, 0.14);
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(88, 104, 134, 0.16);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(244, 247, 250, 0.86) 100%
+  );
   color: var(--text-secondary);
 }
 
 .resetButton {
-  border: 1px solid rgba(39, 60, 90, 0.22);
-  background: rgba(39, 60, 90, 0.08);
-  color: var(--text-primary);
+  border: 1px solid rgba(39, 60, 90, 0.24);
+  background: linear-gradient(180deg, #3a4e71 0%, #2b3a55 100%);
+  color: #f7f8fb;
 }
 
 .ghostButton:hover,
 .resetButton:hover {
   transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(62, 83, 118, 0.12);
 }
 
 .ghostButton:hover {
   border-color: rgba(88, 104, 134, 0.3);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(240, 244, 248, 0.94) 100%
+  );
+  color: var(--text-primary);
 }
 
 .resetButton:hover {
-  border-color: rgba(39, 60, 90, 0.34);
-  background: rgba(39, 60, 90, 0.12);
+  border-color: rgba(39, 60, 90, 0.42);
+  background: linear-gradient(180deg, #435a81 0%, #324562 100%);
+}
+
+.ghostButton:focus-visible,
+.resetButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(170, 193, 231, 0.2);
 }
 
 .filterSection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 156px;
+  gap: 18px;
+  align-items: center;
   margin-top: 16px;
   padding: 16px 18px;
   border: 1px solid rgba(88, 104, 134, 0.12);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: var(--shadow-soft);
+}
+
+.filterMain {
+  min-width: 0;
 }
 
 .filterHeader {
@@ -149,6 +165,15 @@
 .filterTitle {
   margin: 0;
   font-size: 18px;
+}
+
+.filterActions {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  align-self: center;
+  justify-items: stretch;
+  align-content: center;
 }
 
 .filterDescription {
@@ -301,6 +326,7 @@
   --tier-fg: var(--text-primary);
   --tier-border: var(--border-primary);
   display: grid;
+  grid-template-rows: 28px minmax(0, 1fr);
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--tier-border);
@@ -332,24 +358,30 @@
 
 .operatorTopRow {
   display: flex;
-  align-items: flex-start;
+  height: 28px;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
+  overflow: hidden;
 }
 
 .operatorIdentity {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex: 1 1 auto;
   align-items: center;
+  height: 100%;
   min-width: 0;
 }
 
 .operatorName {
+  display: block;
   color: var(--tier-fg);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .operatorTier,
@@ -377,27 +409,51 @@
 
 .removeButton {
   flex: 0 0 auto;
-  height: 24px;
-  padding: 0 8px;
-  border: 1px solid rgba(184, 90, 99, 0.24);
-  border-radius: 999px;
-  background: rgba(184, 90, 99, 0.08);
+  display: inline-flex;
+  width: 28px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(184, 90, 99, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(
+    180deg,
+    rgba(184, 90, 99, 0.1) 0%,
+    rgba(184, 90, 99, 0.16) 100%
+  );
   color: #9a4d58;
-  font-size: 11px;
   cursor: pointer;
   transition:
     border-color 180ms ease,
     background 180ms ease,
-    transform 180ms ease;
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.removeIcon {
+  width: 14px;
+  height: 14px;
 }
 
 .removeButton:hover {
   transform: translateY(-1px);
-  border-color: rgba(184, 90, 99, 0.4);
-  background: rgba(184, 90, 99, 0.14);
+  border-color: rgba(184, 90, 99, 0.38);
+  background: linear-gradient(
+    180deg,
+    rgba(184, 90, 99, 0.16) 0%,
+    rgba(184, 90, 99, 0.24) 100%
+  );
+  box-shadow: 0 8px 14px rgba(154, 77, 88, 0.12);
+}
+
+.removeButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 90, 99, 0.18);
 }
 
 .operatorDescription {
+  align-self: stretch;
   margin: 0;
   color: var(--text-primary);
   font-size: 13px;
@@ -447,10 +503,6 @@
     grid-template-columns: 1fr;
   }
 
-  .toolbarRow {
-    justify-content: flex-start;
-  }
-
   .groupHeader {
     align-items: flex-start;
     flex-direction: column;
@@ -467,6 +519,20 @@
   .groupPanel {
     padding-left: 12px;
     padding-right: 12px;
+  }
+
+  .filterSection {
+    grid-template-columns: 1fr;
+  }
+
+  .filterHeader {
+    margin-bottom: 12px;
+  }
+
+  .filterActions {
+    width: 100%;
+    max-width: none;
+    align-self: stretch;
   }
 
   .operatorGrid {

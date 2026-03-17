@@ -6,7 +6,6 @@ import {
 } from '@/entities/covenant/model/normalizeCovenants';
 import { buildOperatorGroups } from '@/entities/operator/model/buildOperatorGroups';
 import { operators } from '@/entities/operator/model/normalizeOperators';
-import { filterOperators } from '@/entities/operator/model/queryOperators';
 import { useStrategyStore } from '@/features/strategy/model/useStrategyStore';
 import { buildHighlightSegments } from '@/shared/lib/highlightText';
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
@@ -41,12 +40,6 @@ export function StrategyBoardPage() {
 
   const deferredSearchKeyword = useDeferredValue(searchKeyword);
   const searchKeywords = getSearchKeywords(deferredSearchKeyword);
-  const visibleOperators = filterOperators(
-    operators,
-    selectedCovenantIds,
-    deferredSearchKeyword,
-    removedOperatorIds,
-  );
   const groups = buildOperatorGroups(
     operators,
     selectedCovenantIds,
@@ -54,9 +47,6 @@ export function StrategyBoardPage() {
     removedOperatorIds,
   );
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
-  const pickedVisibleCount = visibleOperators.filter((operator) =>
-    pickedOperatorIdSet.has(operator.id),
-  ).length;
 
   function renderCovenantChip(
     covenantId: string,
@@ -110,56 +100,53 @@ export function StrategyBoardPage() {
               }}
             />
           </label>
-
-          <div className={styles.toolbarRow}>
-            <span className={styles.toolbarStat}>命中 {visibleOperators.length}</span>
-            <span className={styles.toolbarStat}>已拿 {pickedVisibleCount}</span>
-            <span className={styles.toolbarStat}>已删 {removedOperatorIds.length}</span>
-            {removedOperatorIds.length > 0 ? (
-              <button
-                className={styles.ghostButton}
-                type="button"
-                onClick={() => restoreRemovedOperators()}
-              >
-                恢复已删
-              </button>
-            ) : null}
-            <button className={styles.resetButton} type="button" onClick={() => reset()}>
-              清空本局
-            </button>
-          </div>
         </div>
       </header>
 
       <section className={styles.filterSection}>
-        <div className={styles.filterHeader}>
-          <div>
+        <div className={styles.filterMain}>
+          <div className={styles.filterHeader}>
             <h2 className={styles.filterTitle}>盟约筛选</h2>
           </div>
+
+          <div className={styles.filterGroup}>
+            <div className={styles.filterLabelRow}>
+              <span className={styles.filterLabel}>主要盟约</span>
+              <span className={styles.filterHint}>更常用，优先关注</span>
+            </div>
+            <div className={styles.chipRow}>
+              {primaryCovenants.map((covenant) =>
+                renderCovenantChip(covenant.id, covenant.name, true),
+              )}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <div className={styles.filterLabelRow}>
+              <span className={styles.filterLabel}>次要盟约</span>
+              <span className={styles.filterHint}>按需补充路线</span>
+            </div>
+            <div className={styles.chipRow}>
+              {secondaryCovenants.map((covenant) =>
+                renderCovenantChip(covenant.id, covenant.name, false),
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className={styles.filterGroup}>
-          <div className={styles.filterLabelRow}>
-            <span className={styles.filterLabel}>主要盟约</span>
-            <span className={styles.filterHint}>更常用，优先关注</span>
-          </div>
-          <div className={styles.chipRow}>
-            {primaryCovenants.map((covenant) =>
-              renderCovenantChip(covenant.id, covenant.name, true),
-            )}
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <div className={styles.filterLabelRow}>
-            <span className={styles.filterLabel}>次要盟约</span>
-            <span className={styles.filterHint}>按需补充路线</span>
-          </div>
-          <div className={styles.chipRow}>
-            {secondaryCovenants.map((covenant) =>
-              renderCovenantChip(covenant.id, covenant.name, false),
-            )}
-          </div>
+        <div className={styles.filterActions}>
+          {removedOperatorIds.length > 0 ? (
+            <button
+              className={styles.ghostButton}
+              type="button"
+              onClick={() => restoreRemovedOperators()}
+            >
+              恢复已删
+            </button>
+          ) : null}
+          <button className={styles.resetButton} type="button" onClick={() => reset()}>
+            重置
+          </button>
         </div>
       </section>
 
@@ -196,6 +183,9 @@ export function StrategyBoardPage() {
               <div className={styles.operatorGrid}>
                 {group.operators.map((operator) => {
                   const isPicked = pickedOperatorIdSet.has(operator.id);
+                  const traitTagSet = new Set(
+                    operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
+                  );
                   const highlightKeywords = [
                     ...searchKeywords,
                     ...operator.traitTags.filter((tag) =>
@@ -228,32 +218,54 @@ export function StrategyBoardPage() {
                       <div className={styles.operatorTopRow}>
                         <div className={styles.operatorIdentity}>
                           <span className={styles.operatorName}>{operator.name}</span>
-                          <span className={styles.operatorTier}>
-                            {operator.tierLabel}
-                          </span>
-                          {operator.traitTags.map((tag) => (
-                            <span className={styles.operatorTag} key={`${operator.id}-${tag}`}>
-                              {tag}
-                            </span>
-                          ))}
                         </div>
 
                         <button
                           className={styles.removeButton}
                           type="button"
+                          aria-label={`移除 ${operator.name}`}
+                          title={`移除 ${operator.name}`}
                           onKeyDown={(event) => event.stopPropagation()}
                           onClick={(event) => {
                             event.stopPropagation();
                             toggleRemovedOperator(operator.id);
                           }}
                         >
-                          删
+                          <svg
+                            className={styles.removeIcon}
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M9.25 3.75h5.5M4.75 6.75h14.5M8 6.75v11a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5-1.5v-11M10.5 10.25v5.5M13.5 10.25v5.5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
                         </button>
                       </div>
 
                       <p className={styles.operatorDescription}>
-                        {descriptionSegments.map((segment, index) =>
-                          segment.highlighted ? (
+                        {descriptionSegments.map((segment, index) => {
+                          const isTraitTagSegment = traitTagSet.has(
+                            segment.text.toLocaleLowerCase('zh-CN'),
+                          );
+
+                          if (isTraitTagSegment) {
+                            return (
+                              <span
+                                className={styles.operatorTag}
+                                key={`${operator.id}-${index}-${segment.text}`}
+                              >
+                                {segment.text}
+                              </span>
+                            );
+                          }
+
+                          return segment.highlighted ? (
                             <mark
                               className={styles.descriptionHighlight}
                               key={`${operator.id}-${index}-${segment.text}`}
@@ -264,8 +276,8 @@ export function StrategyBoardPage() {
                             <span key={`${operator.id}-${index}-${segment.text}`}>
                               {segment.text}
                             </span>
-                          ),
-                        )}
+                          );
+                        })}
                       </p>
                     </article>
                   );
