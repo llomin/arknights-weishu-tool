@@ -12,6 +12,7 @@ export interface CovenantEntity {
   description: string;
   sortOrder: number;
   isPrimary: boolean;
+  recommandWith?: string[];
 }
 
 export interface OperatorEntity {

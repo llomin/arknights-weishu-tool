@@ -75,6 +75,15 @@ export function StrategyBoardPage() {
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
   const maxVisibleTier = currentLevel === null ? null : Math.min(currentLevel + 1, 6);
 
+  const recommendedCovenantIds = new Set(
+    selectedCovenantIds.flatMap((id) => {
+      const covenant = [...primaryCovenants, ...secondaryCovenants].find(
+        (c) => c.id === id,
+      );
+      return covenant?.recommandWith ?? [];
+    }),
+  );
+
   function renderCovenantChip(
     covenantId: string,
     covenantName: string,
@@ -82,6 +91,7 @@ export function StrategyBoardPage() {
     isPrimary: boolean,
   ) {
     const isSelected = selectedCovenantIds.includes(covenantId);
+    const isRecommended = recommendedCovenantIds.has(covenantId);
 
     return (
       <button
@@ -91,6 +101,7 @@ export function StrategyBoardPage() {
           styles.covenantChip,
           isPrimary ? styles.covenantChipPrimary : styles.covenantChipSecondary,
           isSelected && styles.covenantChipSelected,
+          !isSelected && isRecommended && styles.covenantChipRecommended,
         )}
         aria-pressed={isSelected}
         title={covenantDescription}
