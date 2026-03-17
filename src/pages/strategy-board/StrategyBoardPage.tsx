@@ -389,16 +389,18 @@ export function StrategyBoardPage() {
                     <div className={styles.covenantClusterStack}>
                       {priorityGroups.map((group) => (
                         <article
-                          className={styles.groupPanel}
+                          className={styles.covenantCluster}
                           key={`priority-${group.covenantId}`}
                         >
-                          <header className={styles.groupHeader}>
-                            <h3 className={styles.groupTitle}>{group.covenantName}</h3>
-                            <div className={styles.groupMeta}>
-                              <span className={styles.groupMetaItem}>
+                          <header className={styles.covenantClusterHeader}>
+                            <h3 className={styles.covenantClusterTitle}>
+                              {group.covenantName}
+                            </h3>
+                            <div className={styles.covenantClusterMeta}>
+                              <span className={styles.covenantClusterMetaItem}>
                                 激活 {group.activationCount} 人
                               </span>
-                              <span className={styles.groupMetaItem}>
+                              <span className={styles.covenantClusterMetaItem}>
                                 {group.operators.length} 名干员
                               </span>
                             </div>
@@ -442,16 +444,18 @@ export function StrategyBoardPage() {
                     <div className={styles.covenantClusterStack}>
                       {otherGroups.map((group) => (
                         <article
-                          className={styles.groupPanel}
+                          className={styles.covenantCluster}
                           key={`other-${group.covenantId}`}
                         >
-                          <header className={styles.groupHeader}>
-                            <h3 className={styles.groupTitle}>{group.covenantName}</h3>
-                            <div className={styles.groupMeta}>
-                              <span className={styles.groupMetaItem}>
+                          <header className={styles.covenantClusterHeader}>
+                            <h3 className={styles.covenantClusterTitle}>
+                              {group.covenantName}
+                            </h3>
+                            <div className={styles.covenantClusterMeta}>
+                              <span className={styles.covenantClusterMetaItem}>
                                 激活 {group.activationCount} 人
                               </span>
-                              <span className={styles.groupMetaItem}>
+                              <span className={styles.covenantClusterMetaItem}>
                                 {group.operators.length} 名干员
                               </span>
                             </div>

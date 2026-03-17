@@ -396,6 +396,46 @@
   gap: 12px;
 }
 
+.covenantCluster {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(88, 104, 134, 0.12);
+}
+
+.covenantClusterStack > .covenantCluster:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.covenantClusterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.covenantClusterTitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.covenantClusterMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.covenantClusterMetaItem {
+  white-space: nowrap;
+}
+
 .operatorGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 208px));
@@ -625,6 +665,11 @@
   }
 
   .prioritySectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .covenantClusterHeader {
     align-items: flex-start;
     flex-direction: column;
   }
