@@ -510,12 +510,15 @@
   display: flex;
   flex: 1 1 auto;
   align-items: center;
+  gap: 6px;
   height: 100%;
   min-width: 0;
 }
 
 .operatorName {
   display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--tier-fg);
   font-size: 15px;
   font-weight: 700;
@@ -523,6 +526,55 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.favoriteButton {
+  flex: 0 0 auto;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(88, 104, 134, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #8592a8;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.favoriteButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(210, 162, 49, 0.28);
+  background: rgba(255, 248, 229, 0.92);
+  color: #b88712;
+}
+
+.favoriteButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(210, 162, 49, 0.18);
+}
+
+.favoriteButtonActive {
+  border-color: rgba(210, 162, 49, 0.32);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 240, 190, 0.96) 0%,
+    rgba(255, 227, 144, 0.92) 100%
+  );
+  color: #b27a0f;
+  box-shadow: 0 6px 12px rgba(210, 162, 49, 0.14);
+}
+
+.favoriteIcon {
+  width: 14px;
+  height: 14px;
 }
 
 .operatorTier,

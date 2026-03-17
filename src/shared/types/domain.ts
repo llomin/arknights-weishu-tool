@@ -41,4 +41,5 @@ export interface StrategyState {
   searchKeyword: string;
   pickedOperatorIds: string[];
   removedOperatorIds: string[];
+  favoriteOperatorIds: string[];
 }

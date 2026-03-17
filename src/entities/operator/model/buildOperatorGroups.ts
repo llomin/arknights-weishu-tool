@@ -2,10 +2,10 @@ import { covenantMap } from '@/entities/covenant/model/normalizeCovenants';
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
 import type { OperatorEntity, OperatorGroupView } from '@/shared/types/domain';
 import {
+  buildOperatorSorter,
   matchesOperatorLevel,
   matchesOperatorRemoval,
   matchesOperatorSearch,
-  sortOperators,
 } from './queryOperators';
 
 export function buildOperatorGroups(
@@ -14,8 +14,10 @@ export function buildOperatorGroups(
   searchKeyword: string,
   removedOperatorIds: string[] = [],
   currentLevel: OperatorEntity['tier'] | null = null,
+  favoriteOperatorIds: string[] = [],
 ): OperatorGroupView[] {
   const normalizedKeywords = getSearchKeywords(searchKeyword);
+  const operatorSorter = buildOperatorSorter(favoriteOperatorIds);
 
   return selectedCovenantIds
     .map<OperatorGroupView | null>((covenantId) => {
@@ -30,7 +32,7 @@ export function buildOperatorGroups(
         .filter((operator) => matchesOperatorRemoval(operator, removedOperatorIds))
         .filter((operator) => matchesOperatorLevel(operator, currentLevel))
         .filter((operator) => matchesOperatorSearch(operator, normalizedKeywords))
-        .sort(sortOperators);
+        .sort(operatorSorter);
 
       if (visibleOperators.length === 0) {
         return null;

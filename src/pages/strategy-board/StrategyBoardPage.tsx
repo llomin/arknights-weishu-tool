@@ -34,6 +34,7 @@ export function StrategyBoardPage() {
   );
   const currentLevel = useStrategyStore((state) => state.currentLevel);
   const searchKeyword = useStrategyStore((state) => state.searchKeyword);
+  const favoriteOperatorIds = useStrategyStore((state) => state.favoriteOperatorIds);
   const pickedOperatorIds = useStrategyStore((state) => state.pickedOperatorIds);
   const removedOperatorIds = useStrategyStore((state) => state.removedOperatorIds);
   const restoreRemovedOperators = useStrategyStore(
@@ -41,6 +42,9 @@ export function StrategyBoardPage() {
   );
   const toggleCovenant = useStrategyStore((state) => state.toggleCovenant);
   const toggleCurrentLevel = useStrategyStore((state) => state.toggleCurrentLevel);
+  const toggleFavoriteOperator = useStrategyStore(
+    (state) => state.toggleFavoriteOperator,
+  );
   const toggleOperator = useStrategyStore((state) => state.toggleOperator);
   const toggleRemovedOperator = useStrategyStore(
     (state) => state.toggleRemovedOperator,
@@ -57,6 +61,7 @@ export function StrategyBoardPage() {
     deferredSearchKeyword,
     removedOperatorIds,
     currentLevel,
+    favoriteOperatorIds,
   );
   const groups = buildOperatorGroups(
     operators,
@@ -64,7 +69,9 @@ export function StrategyBoardPage() {
     deferredSearchKeyword,
     removedOperatorIds,
     currentLevel,
+    favoriteOperatorIds,
   );
+  const favoriteOperatorIdSet = new Set(favoriteOperatorIds);
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
   const maxVisibleTier = currentLevel === null ? null : Math.min(currentLevel + 1, 6);
 
@@ -146,6 +153,7 @@ export function StrategyBoardPage() {
   }
 
   function renderOperatorCard(covenantId: string, operator: OperatorEntity) {
+    const isFavorite = favoriteOperatorIdSet.has(operator.id);
     const isPicked = pickedOperatorIdSet.has(operator.id);
     const matchedSelectedCovenants = getMatchedSelectedCovenants(operator);
     const traitTagSet = new Set(
@@ -181,6 +189,30 @@ export function StrategyBoardPage() {
         <div className={styles.operatorTopRow}>
           <div className={styles.operatorIdentity}>
             <span className={styles.operatorName}>{operator.name}</span>
+            <button
+              className={clsx(
+                styles.favoriteButton,
+                isFavorite && styles.favoriteButtonActive,
+              )}
+              type="button"
+              aria-label={isFavorite ? `取消收藏 ${operator.name}` : `收藏 ${operator.name}`}
+              title={isFavorite ? `取消收藏 ${operator.name}` : `收藏 ${operator.name}`}
+              onKeyDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleFavoriteOperator(operator.id);
+              }}
+            >
+              <svg className={styles.favoriteIcon} viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 3.8l2.52 5.11 5.64.82-4.08 3.97.97 5.62L12 16.68 6.95 19.32l.97-5.62-4.08-3.97 5.64-.82L12 3.8z"
+                  fill={isFavorite ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           </div>
 
           <button

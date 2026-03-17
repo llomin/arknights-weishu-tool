@@ -1,12 +1,25 @@
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
 import type { OperatorEntity } from '@/shared/types/domain';
 
-export function sortOperators(left: OperatorEntity, right: OperatorEntity) {
+function compareOperators(left: OperatorEntity, right: OperatorEntity) {
   return (
     left.priorityWeight - right.priorityWeight ||
     right.tier - left.tier ||
     left.name.localeCompare(right.name, 'zh-Hans-CN')
   );
+}
+
+export function buildOperatorSorter(favoriteOperatorIds: string[] = []) {
+  const favoriteOperatorIdSet = new Set(favoriteOperatorIds);
+
+  return (left: OperatorEntity, right: OperatorEntity) =>
+    Number(favoriteOperatorIdSet.has(right.id)) -
+      Number(favoriteOperatorIdSet.has(left.id)) ||
+    compareOperators(left, right);
+}
+
+export function sortOperators(left: OperatorEntity, right: OperatorEntity) {
+  return compareOperators(left, right);
 }
 
 export function matchesOperatorSearch(
@@ -55,17 +68,19 @@ export function filterOperators(
   searchKeyword: string,
   removedOperatorIds: string[] = [],
   currentLevel: OperatorEntity['tier'] | null = null,
+  favoriteOperatorIds: string[] = [],
 ) {
   if (selectedCovenantIds.length === 0) {
     return [];
   }
 
   const normalizedKeywords = getSearchKeywords(searchKeyword);
+  const operatorSorter = buildOperatorSorter(favoriteOperatorIds);
 
   return operators
     .filter((operator) => matchesOperatorCovenants(operator, selectedCovenantIds))
     .filter((operator) => matchesOperatorRemoval(operator, removedOperatorIds))
     .filter((operator) => matchesOperatorLevel(operator, currentLevel))
     .filter((operator) => matchesOperatorSearch(operator, normalizedKeywords))
-    .sort(sortOperators);
+    .sort(operatorSorter);
 }

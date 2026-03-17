@@ -7,8 +7,50 @@ interface StrategyStore extends StrategyState {
   setSearchKeyword: (keyword: string) => void;
   toggleCovenant: (covenantId: string) => void;
   toggleCurrentLevel: (level: NonNullable<StrategyState['currentLevel']>) => void;
+  toggleFavoriteOperator: (operatorId: string) => void;
   toggleOperator: (operatorId: string) => void;
   toggleRemovedOperator: (operatorId: string) => void;
+}
+
+const favoriteStorageKey = 'strategy-board.favoriteOperatorIds';
+
+function loadFavoriteOperatorIds() {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(favoriteStorageKey);
+
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    return [...new Set(parsedValue.filter((item): item is string => typeof item === 'string'))];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavoriteOperatorIds(favoriteOperatorIds: string[]) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      favoriteStorageKey,
+      JSON.stringify(favoriteOperatorIds),
+    );
+  } catch {
+    // Ignore storage write failures and keep the in-memory state usable.
+  }
 }
 
 const initialState: StrategyState = {
@@ -17,11 +59,20 @@ const initialState: StrategyState = {
   searchKeyword: '',
   pickedOperatorIds: [],
   removedOperatorIds: [],
+  favoriteOperatorIds: loadFavoriteOperatorIds(),
 };
 
 export const useStrategyStore = create<StrategyStore>((set) => ({
   ...initialState,
-  reset: () => set(initialState),
+  reset: () =>
+    set((state) => ({
+      selectedCovenantIds: [],
+      currentLevel: null,
+      searchKeyword: '',
+      pickedOperatorIds: [],
+      removedOperatorIds: [],
+      favoriteOperatorIds: state.favoriteOperatorIds,
+    })),
   restoreRemovedOperators: () =>
     set((state) => ({
       ...state,
@@ -41,6 +92,18 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
     set((state) => ({
       currentLevel: state.currentLevel === level ? null : level,
     })),
+  toggleFavoriteOperator: (operatorId) =>
+    set((state) => {
+      const favoriteOperatorIds = state.favoriteOperatorIds.includes(operatorId)
+        ? state.favoriteOperatorIds.filter((item) => item !== operatorId)
+        : [...state.favoriteOperatorIds, operatorId];
+
+      saveFavoriteOperatorIds(favoriteOperatorIds);
+
+      return {
+        favoriteOperatorIds,
+      };
+    }),
   toggleOperator: (operatorId) =>
     set((state) => ({
       pickedOperatorIds: state.pickedOperatorIds.includes(operatorId)
