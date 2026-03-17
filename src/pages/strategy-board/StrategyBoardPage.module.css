@@ -367,7 +367,7 @@
 .prioritySectionTitle {
   margin: 0;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1.2;
 }
 
@@ -391,10 +391,16 @@
   white-space: nowrap;
 }
 
+.covenantClusterStack {
+  display: grid;
+  gap: 12px;
+}
+
 .operatorGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 208px));
   gap: 10px;
+  justify-content: flex-start;
 }
 
 .operatorCard {
@@ -402,6 +408,8 @@
   --tier-border: var(--border-primary);
   display: grid;
   grid-template-rows: 28px minmax(0, 1fr);
+  width: 100%;
+  max-width: 208px;
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--tier-border);
@@ -650,5 +658,9 @@
 
   .operatorGrid {
     grid-template-columns: 1fr;
+  }
+
+  .operatorCard {
+    max-width: none;
   }
 }

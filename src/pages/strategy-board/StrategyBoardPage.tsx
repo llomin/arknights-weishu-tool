@@ -6,10 +6,11 @@ import {
 } from '@/entities/covenant/model/normalizeCovenants';
 import { buildOperatorGroups } from '@/entities/operator/model/buildOperatorGroups';
 import { operators } from '@/entities/operator/model/normalizeOperators';
+import { filterOperators } from '@/entities/operator/model/queryOperators';
 import { useStrategyStore } from '@/features/strategy/model/useStrategyStore';
 import { buildHighlightSegments } from '@/shared/lib/highlightText';
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
-import type { OperatorEntity } from '@/shared/types/domain';
+import type { OperatorEntity, OperatorGroupView } from '@/shared/types/domain';
 import styles from './StrategyBoardPage.module.css';
 
 const tierClassNameMap = {
@@ -47,6 +48,12 @@ export function StrategyBoardPage() {
   const deferredSearchKeyword = useDeferredValue(searchKeyword);
   const searchKeywords = getSearchKeywords(deferredSearchKeyword);
   const selectedCovenantIdSet = new Set(selectedCovenantIds);
+  const visibleOperators = filterOperators(
+    operators,
+    selectedCovenantIds,
+    deferredSearchKeyword,
+    removedOperatorIds,
+  );
   const groups = buildOperatorGroups(
     operators,
     selectedCovenantIds,
@@ -83,6 +90,31 @@ export function StrategyBoardPage() {
     return operator.covenants.filter((covenantId) =>
       selectedCovenantIdSet.has(covenantId),
     );
+  }
+
+  function isMultiHitOperator(operator: OperatorEntity) {
+    return getMatchedSelectedCovenants(operator).length >= 2;
+  }
+
+  function isPriorityOperator(operator: OperatorEntity) {
+    return !isMultiHitOperator(operator) && highPriorityBuckets.has(operator.priorityBucket);
+  }
+
+  function buildSectionGroups(
+    predicate: (operator: OperatorEntity) => boolean,
+  ): OperatorGroupView[] {
+    return groups
+      .map((group) => ({
+        ...group,
+        operators: group.operators.filter(predicate),
+      }))
+      .filter((group) => group.operators.length > 0);
+  }
+
+  function getUniqueOperatorCount(sectionGroups: OperatorGroupView[]) {
+    return new Set(
+      sectionGroups.flatMap((group) => group.operators.map((operator) => operator.id)),
+    ).size;
   }
 
   function renderOperatorCard(covenantId: string, operator: OperatorEntity) {
@@ -292,94 +324,152 @@ export function StrategyBoardPage() {
         </section>
       ) : (
         <section className={styles.groupStack}>
-          {groups.map((group) => {
-            const multiHitOperators = group.operators.filter(
-              (operator) => getMatchedSelectedCovenants(operator).length >= 2,
+          {(() => {
+            const multiHitOperators = visibleOperators.filter(isMultiHitOperator);
+            const priorityGroups = buildSectionGroups(isPriorityOperator);
+            const otherGroups = buildSectionGroups(
+              (operator) => !isMultiHitOperator(operator) && !isPriorityOperator(operator),
             );
-            const remainingOperators = group.operators.filter(
-              (operator) => getMatchedSelectedCovenants(operator).length < 2,
-            );
-            const priorityOperators = remainingOperators.filter((operator) =>
-              highPriorityBuckets.has(operator.priorityBucket),
-            );
-            const otherOperators = remainingOperators.filter(
-              (operator) => !highPriorityBuckets.has(operator.priorityBucket),
-            );
-            const operatorSections = [
-              {
-                key: 'multi-hit',
-                title: '多盟约命中',
-                hint: '同时命中多个已选盟约，先看这批联动牌',
-                operators: multiHitOperators,
-                className: styles.prioritySectionMultiHit,
-              },
-              {
-                key: 'priority',
-                title: '优先拿牌',
-                hint: '先看层数联动和核心收益',
-                operators: priorityOperators,
-                className: styles.prioritySectionPrimary,
-              },
-              {
-                key: 'other',
-                title: '其他可选',
-                hint: '补位、过渡和条件牌',
-                operators: otherOperators,
-                className: styles.prioritySectionSecondary,
-              },
-            ].filter((section) => section.operators.length > 0);
 
             return (
-              <article className={styles.groupPanel} key={group.covenantId}>
-                <header className={styles.groupHeader}>
-                  <h2 className={styles.groupTitle}>{group.covenantName}</h2>
-                  <div className={styles.groupMeta}>
-                    <span className={styles.groupMetaItem}>
-                      激活 {group.activationCount} 人
-                    </span>
-                    <span className={styles.groupMetaItem}>
-                      {group.operators.length} 名干员
-                    </span>
-                    {multiHitOperators.length > 0 ? (
-                      <span className={styles.groupMetaItem}>
-                        多命中 {multiHitOperators.length}
-                      </span>
-                    ) : null}
-                    {priorityOperators.length > 0 ? (
-                      <span className={styles.groupMetaItem}>
-                        优先 {priorityOperators.length}
-                      </span>
-                    ) : null}
-                  </div>
-                </header>
-
-                <div className={styles.prioritySections}>
-                  {operatorSections.map((section) => (
-                    <section
-                      className={clsx(styles.prioritySection, section.className)}
-                      key={`${group.covenantId}-${section.key}`}
-                    >
-                      <header className={styles.prioritySectionHeader}>
-                        <div className={styles.prioritySectionHeading}>
-                          <h3 className={styles.prioritySectionTitle}>{section.title}</h3>
-                          <p className={styles.prioritySectionHint}>{section.hint}</p>
-                        </div>
-                        <span className={styles.prioritySectionCount}>
-                          {section.operators.length} 名
-                        </span>
-                      </header>
-
-                      <div className={styles.operatorGrid}>
-                        {section.operators.map((operator) =>
-                          renderOperatorCard(group.covenantId, operator),
-                        )}
+              <>
+                {multiHitOperators.length > 0 ? (
+                  <section
+                    className={clsx(
+                      styles.prioritySection,
+                      styles.prioritySectionMultiHit,
+                    )}
+                  >
+                    <header className={styles.prioritySectionHeader}>
+                      <div className={styles.prioritySectionHeading}>
+                        <h2 className={styles.prioritySectionTitle}>多盟约命中</h2>
+                        <p className={styles.prioritySectionHint}>
+                          同时命中多个已选盟约，先看这批联动牌
+                        </p>
                       </div>
-                    </section>
-                  ))}
-                </div>
-              </article>
+                      <div className={styles.groupMeta}>
+                        <span className={styles.groupMetaItem}>
+                          {multiHitOperators.length} 名干员
+                        </span>
+                      </div>
+                    </header>
+
+                    <div className={styles.operatorGrid}>
+                      {multiHitOperators.map((operator) =>
+                        renderOperatorCard('multi-hit', operator),
+                      )}
+                    </div>
+                  </section>
+                ) : null}
+
+                {priorityGroups.length > 0 ? (
+                  <section
+                    className={clsx(
+                      styles.prioritySection,
+                      styles.prioritySectionPrimary,
+                    )}
+                  >
+                    <header className={styles.prioritySectionHeader}>
+                      <div className={styles.prioritySectionHeading}>
+                        <h2 className={styles.prioritySectionTitle}>优先拿牌</h2>
+                        <p className={styles.prioritySectionHint}>
+                          先看层数联动和核心收益
+                        </p>
+                      </div>
+                      <div className={styles.groupMeta}>
+                        <span className={styles.groupMetaItem}>
+                          {getUniqueOperatorCount(priorityGroups)} 名干员
+                        </span>
+                        <span className={styles.groupMetaItem}>
+                          {priorityGroups.length} 个盟约簇
+                        </span>
+                      </div>
+                    </header>
+
+                    <div className={styles.covenantClusterStack}>
+                      {priorityGroups.map((group) => (
+                        <article
+                          className={styles.groupPanel}
+                          key={`priority-${group.covenantId}`}
+                        >
+                          <header className={styles.groupHeader}>
+                            <h3 className={styles.groupTitle}>{group.covenantName}</h3>
+                            <div className={styles.groupMeta}>
+                              <span className={styles.groupMetaItem}>
+                                激活 {group.activationCount} 人
+                              </span>
+                              <span className={styles.groupMetaItem}>
+                                {group.operators.length} 名干员
+                              </span>
+                            </div>
+                          </header>
+
+                          <div className={styles.operatorGrid}>
+                            {group.operators.map((operator) =>
+                              renderOperatorCard(group.covenantId, operator),
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {otherGroups.length > 0 ? (
+                  <section
+                    className={clsx(
+                      styles.prioritySection,
+                      styles.prioritySectionSecondary,
+                    )}
+                  >
+                    <header className={styles.prioritySectionHeader}>
+                      <div className={styles.prioritySectionHeading}>
+                        <h2 className={styles.prioritySectionTitle}>其他可选</h2>
+                        <p className={styles.prioritySectionHint}>
+                          补位、过渡和条件牌
+                        </p>
+                      </div>
+                      <div className={styles.groupMeta}>
+                        <span className={styles.groupMetaItem}>
+                          {getUniqueOperatorCount(otherGroups)} 名干员
+                        </span>
+                        <span className={styles.groupMetaItem}>
+                          {otherGroups.length} 个盟约簇
+                        </span>
+                      </div>
+                    </header>
+
+                    <div className={styles.covenantClusterStack}>
+                      {otherGroups.map((group) => (
+                        <article
+                          className={styles.groupPanel}
+                          key={`other-${group.covenantId}`}
+                        >
+                          <header className={styles.groupHeader}>
+                            <h3 className={styles.groupTitle}>{group.covenantName}</h3>
+                            <div className={styles.groupMeta}>
+                              <span className={styles.groupMetaItem}>
+                                激活 {group.activationCount} 人
+                              </span>
+                              <span className={styles.groupMetaItem}>
+                                {group.operators.length} 名干员
+                              </span>
+                            </div>
+                          </header>
+
+                          <div className={styles.operatorGrid}>
+                            {group.operators.map((operator) =>
+                              renderOperatorCard(group.covenantId, operator),
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+              </>
             );
-          })}
+          })()}
         </section>
       )}
     </main>
