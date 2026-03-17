@@ -340,11 +340,12 @@
 }
 
 .prioritySectionPrimary {
-  border-color: rgba(79, 120, 183, 0.22);
+  border-color: rgba(58, 117, 214, 0.28);
   background: linear-gradient(
     180deg,
-    rgba(170, 193, 231, 0.16) 0%,
-    rgba(255, 255, 255, 0.72) 100%
+    rgba(92, 153, 255, 0.24) 0%,
+    rgba(214, 231, 255, 0.82) 52%,
+    rgba(255, 255, 255, 0.74) 100%
   );
 }
 
