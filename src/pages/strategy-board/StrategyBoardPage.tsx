@@ -87,7 +87,7 @@ export function StrategyBoardPage() {
       <header className={styles.header}>
         <div className={styles.headerCopy}>
           <p className={styles.eyebrow}>Wei Shu Protocol Strategy Board</p>
-          <h1 className={styles.title}>卫戍协议拿牌策略工具</h1>
+          <h1 className={styles.title}>卫戍协议助手</h1>
           <p className={styles.description}>
             选择盟约后直接看各组干员描述，搜索支持空格分词。点击卡片标记已拿牌，点“删”可把本局禁用的干员排除掉。
           </p>
