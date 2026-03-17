@@ -71,6 +71,7 @@ export function StrategyBoardPage() {
   function renderCovenantChip(
     covenantId: string,
     covenantName: string,
+    covenantDescription: string,
     isPrimary: boolean,
   ) {
     const isSelected = selectedCovenantIds.includes(covenantId);
@@ -85,6 +86,7 @@ export function StrategyBoardPage() {
           isSelected && styles.covenantChipSelected,
         )}
         aria-pressed={isSelected}
+        title={covenantDescription}
         onClick={() => toggleCovenant(covenantId)}
       >
         {covenantName}
@@ -300,7 +302,12 @@ export function StrategyBoardPage() {
             </div>
             <div className={styles.chipRow}>
               {primaryCovenants.map((covenant) =>
-                renderCovenantChip(covenant.id, covenant.name, true),
+                renderCovenantChip(
+                  covenant.id,
+                  covenant.name,
+                  covenant.description,
+                  true,
+                ),
               )}
             </div>
           </div>
@@ -312,7 +319,12 @@ export function StrategyBoardPage() {
             </div>
             <div className={styles.chipRow}>
               {secondaryCovenants.map((covenant) =>
-                renderCovenantChip(covenant.id, covenant.name, false),
+                renderCovenantChip(
+                  covenant.id,
+                  covenant.name,
+                  covenant.description,
+                  false,
+                ),
               )}
             </div>
           </div>
