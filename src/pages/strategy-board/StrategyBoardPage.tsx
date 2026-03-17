@@ -26,11 +26,13 @@ const highPriorityBuckets = new Set<OperatorEntity['priorityBucket']>([
   'each_and_layers',
   'layers',
 ]);
+const selectableLevels = [1, 2, 3, 4, 5, 6] as const;
 
 export function StrategyBoardPage() {
   const selectedCovenantIds = useStrategyStore(
     (state) => state.selectedCovenantIds,
   );
+  const currentLevel = useStrategyStore((state) => state.currentLevel);
   const searchKeyword = useStrategyStore((state) => state.searchKeyword);
   const pickedOperatorIds = useStrategyStore((state) => state.pickedOperatorIds);
   const removedOperatorIds = useStrategyStore((state) => state.removedOperatorIds);
@@ -38,6 +40,7 @@ export function StrategyBoardPage() {
     (state) => state.restoreRemovedOperators,
   );
   const toggleCovenant = useStrategyStore((state) => state.toggleCovenant);
+  const toggleCurrentLevel = useStrategyStore((state) => state.toggleCurrentLevel);
   const toggleOperator = useStrategyStore((state) => state.toggleOperator);
   const toggleRemovedOperator = useStrategyStore(
     (state) => state.toggleRemovedOperator,
@@ -53,14 +56,17 @@ export function StrategyBoardPage() {
     selectedCovenantIds,
     deferredSearchKeyword,
     removedOperatorIds,
+    currentLevel,
   );
   const groups = buildOperatorGroups(
     operators,
     selectedCovenantIds,
     deferredSearchKeyword,
     removedOperatorIds,
+    currentLevel,
   );
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
+  const maxVisibleTier = currentLevel === null ? null : Math.min(currentLevel + 1, 6);
 
   function renderCovenantChip(
     covenantId: string,
@@ -82,6 +88,26 @@ export function StrategyBoardPage() {
         onClick={() => toggleCovenant(covenantId)}
       >
         {covenantName}
+      </button>
+    );
+  }
+
+  function renderLevelChip(level: OperatorEntity['tier']) {
+    const isSelected = currentLevel === level;
+
+    return (
+      <button
+        key={`level-${level}`}
+        type="button"
+        className={clsx(
+          styles.covenantChip,
+          styles.levelChip,
+          isSelected && styles.levelChipSelected,
+        )}
+        aria-pressed={isSelected}
+        onClick={() => toggleCurrentLevel(level)}
+      >
+        {level} 级
       </button>
     );
   }
@@ -288,6 +314,20 @@ export function StrategyBoardPage() {
               {secondaryCovenants.map((covenant) =>
                 renderCovenantChip(covenant.id, covenant.name, false),
               )}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <div className={styles.filterLabelRow}>
+              <span className={styles.filterLabel}>当前等级</span>
+              <span className={styles.filterHint}>
+                {maxVisibleTier === null
+                  ? '默认不限；选择后会过滤掉高于当前等级 + 1 的干员'
+                  : `已选 ${currentLevel} 级，仅显示 ${maxVisibleTier} 级及以下干员`}
+              </span>
+            </div>
+            <div className={styles.chipRow}>
+              {selectableLevels.map((level) => renderLevelChip(level))}
             </div>
           </div>
         </div>

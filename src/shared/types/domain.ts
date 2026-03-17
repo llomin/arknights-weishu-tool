@@ -37,6 +37,7 @@ export interface OperatorGroupView {
 
 export interface StrategyState {
   selectedCovenantIds: string[];
+  currentLevel: OperatorEntity['tier'] | null;
   searchKeyword: string;
   pickedOperatorIds: string[];
   removedOperatorIds: string[];

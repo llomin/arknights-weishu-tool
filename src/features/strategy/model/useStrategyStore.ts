@@ -6,12 +6,14 @@ interface StrategyStore extends StrategyState {
   restoreRemovedOperators: () => void;
   setSearchKeyword: (keyword: string) => void;
   toggleCovenant: (covenantId: string) => void;
+  toggleCurrentLevel: (level: NonNullable<StrategyState['currentLevel']>) => void;
   toggleOperator: (operatorId: string) => void;
   toggleRemovedOperator: (operatorId: string) => void;
 }
 
 const initialState: StrategyState = {
   selectedCovenantIds: [],
+  currentLevel: null,
   searchKeyword: '',
   pickedOperatorIds: [],
   removedOperatorIds: [],
@@ -34,6 +36,10 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
       selectedCovenantIds: state.selectedCovenantIds.includes(covenantId)
         ? state.selectedCovenantIds.filter((item) => item !== covenantId)
         : [...state.selectedCovenantIds, covenantId],
+    })),
+  toggleCurrentLevel: (level) =>
+    set((state) => ({
+      currentLevel: state.currentLevel === level ? null : level,
     })),
   toggleOperator: (operatorId) =>
     set((state) => ({

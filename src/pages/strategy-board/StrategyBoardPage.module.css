@@ -249,6 +249,23 @@
   color: #f7f8fb;
 }
 
+.levelChip {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid rgba(88, 104, 134, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #5b6d88;
+  font-size: 13px;
+}
+
+.levelChipSelected {
+  border-color: #2f6ed8;
+  background: linear-gradient(180deg, #5c99ff 0%, #2f6ed8 100%);
+  color: #f7fbff;
+  box-shadow: 0 6px 12px rgba(47, 110, 216, 0.14);
+}
+
 .emptyState {
   margin-top: 14px;
   padding: 28px 18px;

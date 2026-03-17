@@ -26,6 +26,17 @@ export function matchesOperatorRemoval(
   return !removedOperatorIds.includes(operator.id);
 }
 
+export function matchesOperatorLevel(
+  operator: OperatorEntity,
+  currentLevel: OperatorEntity['tier'] | null,
+) {
+  if (currentLevel === null) {
+    return true;
+  }
+
+  return operator.tier <= Math.min(currentLevel + 1, 6);
+}
+
 export function matchesOperatorCovenants(
   operator: OperatorEntity,
   selectedCovenantIds: string[],
@@ -43,6 +54,7 @@ export function filterOperators(
   selectedCovenantIds: string[],
   searchKeyword: string,
   removedOperatorIds: string[] = [],
+  currentLevel: OperatorEntity['tier'] | null = null,
 ) {
   if (selectedCovenantIds.length === 0) {
     return [];
@@ -53,6 +65,7 @@ export function filterOperators(
   return operators
     .filter((operator) => matchesOperatorCovenants(operator, selectedCovenantIds))
     .filter((operator) => matchesOperatorRemoval(operator, removedOperatorIds))
+    .filter((operator) => matchesOperatorLevel(operator, currentLevel))
     .filter((operator) => matchesOperatorSearch(operator, normalizedKeywords))
     .sort(sortOperators);
 }
