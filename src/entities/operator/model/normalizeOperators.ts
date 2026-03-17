@@ -1,4 +1,4 @@
-import rawOperators from '../../../../data/data_干员.json';
+import rawOperators from '../../../../data/operators.json';
 import { normalizeSearchText } from '@/shared/lib/normalizeSearchText';
 import type {
   OperatorEntity,
@@ -22,6 +22,20 @@ function parseTier(tierLabel: string): OperatorEntity['tier'] {
   return tier as OperatorEntity['tier'];
 }
 
+function extractTraitTags(description: string) {
+  const tags: string[] = [];
+
+  for (const match of description.matchAll(/<([^<>]+)>/g)) {
+    const tag = match[1]?.trim();
+
+    if (tag && !tags.includes(tag)) {
+      tags.push(tag);
+    }
+  }
+
+  return tags;
+}
+
 function sortOperators(left: OperatorEntity, right: OperatorEntity) {
   return (
     left.priorityWeight - right.priorityWeight ||
@@ -32,18 +46,18 @@ function sortOperators(left: OperatorEntity, right: OperatorEntity) {
 
 export const operators = Object.entries(parsedOperators)
   .map<OperatorEntity>(([name, value]) => {
-    const description = value.特质.描述;
+    const description = value.trait.description;
     const priorityBucket = getOperatorPriorityBucket(description);
 
     return {
       id: name,
       name,
-      covenants: value.盟约,
-      traitCategory: value.特质.分类,
-      traitTags: value.特质.tag,
+      covenants: value.covenants,
+      traitCategory: value.trait.category,
+      traitTags: extractTraitTags(description),
       description,
-      tierLabel: value.阶位,
-      tier: parseTier(value.阶位),
+      tierLabel: value.tier,
+      tier: parseTier(value.tier),
       priorityBucket,
       priorityWeight: getOperatorPriorityWeight(priorityBucket),
       searchText: normalizeSearchText(description),
@@ -82,4 +96,3 @@ export const prioritySummary = operators.reduce<
     other: 0,
   },
 );
-

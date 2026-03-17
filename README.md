@@ -83,8 +83,8 @@ npm run dev
 
 项目使用本地静态 JSON 作为唯一数据源：
 
-- [data/data_盟约.json](/D:/Project/js/llomin-weishu-tool/data/data_盟约.json)
-- [data/data_干员.json](/D:/Project/js/llomin-weishu-tool/data/data_干员.json)
+- [data/covenants.json](/D:/Project/js/llomin-weishu-tool/data/covenants.json)
+- [data/operators.json](/D:/Project/js/llomin-weishu-tool/data/operators.json)
 
 当前实现会在模块加载时完成一次标准化，并用 `Zod` 校验结构：
 
@@ -108,7 +108,7 @@ npm run dev
 
 ### 搜索
 
-- 搜索范围是干员 `特质.描述`
+- 搜索范围是干员 `trait.description`
 - 支持空格分词，例如：`获得 层数`
 - 实际匹配逻辑为“所有关键词都命中”
 - 搜索会和盟约筛选、已删干员过滤一起生效
