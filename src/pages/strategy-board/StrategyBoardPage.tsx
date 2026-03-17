@@ -265,7 +265,7 @@ export function StrategyBoardPage() {
           <p className={styles.eyebrow}>Wei Shu Protocol Strategy Board</p>
           <h1 className={styles.title}>卫戍协议助手</h1>
           <p className={styles.description}>
-            选择盟约后直接看各组干员描述，搜索支持空格分词。点击卡片标记已拿牌，点“删”可把本局禁用的干员排除掉。
+            卫？卫！卫？卫！卫？卫！
           </p>
         </div>
 
