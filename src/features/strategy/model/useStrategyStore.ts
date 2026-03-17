@@ -3,20 +3,28 @@ import type { StrategyState } from '@/shared/types/domain';
 
 interface StrategyStore extends StrategyState {
   reset: () => void;
+  restoreRemovedOperators: () => void;
   setSearchKeyword: (keyword: string) => void;
   toggleCovenant: (covenantId: string) => void;
   toggleOperator: (operatorId: string) => void;
+  toggleRemovedOperator: (operatorId: string) => void;
 }
 
 const initialState: StrategyState = {
   selectedCovenantIds: [],
   searchKeyword: '',
   pickedOperatorIds: [],
+  removedOperatorIds: [],
 };
 
 export const useStrategyStore = create<StrategyStore>((set) => ({
   ...initialState,
   reset: () => set(initialState),
+  restoreRemovedOperators: () =>
+    set((state) => ({
+      ...state,
+      removedOperatorIds: [],
+    })),
   setSearchKeyword: (keyword) =>
     set(() => ({
       searchKeyword: keyword,
@@ -33,5 +41,17 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
         ? state.pickedOperatorIds.filter((item) => item !== operatorId)
         : [...state.pickedOperatorIds, operatorId],
     })),
-}));
+  toggleRemovedOperator: (operatorId) =>
+    set((state) => {
+      const alreadyRemoved = state.removedOperatorIds.includes(operatorId);
 
+      return {
+        removedOperatorIds: alreadyRemoved
+          ? state.removedOperatorIds.filter((item) => item !== operatorId)
+          : [...state.removedOperatorIds, operatorId],
+        pickedOperatorIds: alreadyRemoved
+          ? state.pickedOperatorIds
+          : state.pickedOperatorIds.filter((item) => item !== operatorId),
+      };
+    }),
+}));

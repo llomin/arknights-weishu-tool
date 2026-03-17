@@ -10,6 +10,8 @@ export interface CovenantEntity {
   name: string;
   activationCount: number;
   description: string;
+  sortOrder: number;
+  isPrimary: boolean;
 }
 
 export interface OperatorEntity {
@@ -37,5 +39,5 @@ export interface StrategyState {
   selectedCovenantIds: string[];
   searchKeyword: string;
   pickedOperatorIds: string[];
+  removedOperatorIds: string[];
 }
-

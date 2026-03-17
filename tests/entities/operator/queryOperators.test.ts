@@ -52,6 +52,22 @@ describe('filterOperators', () => {
     ]);
   });
 
+  it('支持空格分隔的多关键字搜索', () => {
+    expect(
+      filterOperators(operators, ['炎', '迅捷'], '攻击 层数').map(
+        (item) => item.id,
+      ),
+    ).toEqual(['甲', '丙']);
+  });
+
+  it('会过滤当次删掉的干员', () => {
+    expect(
+      filterOperators(operators, ['炎', '迅捷'], '', ['甲']).map(
+        (item) => item.id,
+      ),
+    ).toEqual(['丙', '乙']);
+  });
+
   it('按优先级和阶位排序', () => {
     expect(filterOperators(operators, ['炎', '迅捷'], '').map((item) => item.id)).toEqual(
       ['甲', '丙', '乙'],
@@ -69,10 +85,18 @@ describe('buildOperatorGroups', () => {
   });
 
   it('组内继续遵循搜索条件', () => {
-    const groups = buildOperatorGroups(operators, ['炎', '迅捷'], '层数');
+    const groups = buildOperatorGroups(operators, ['炎', '迅捷'], '攻击 层数');
 
     expect(groups).toHaveLength(2);
     expect(groups[0]?.operators.map((item) => item.id)).toEqual(['甲']);
     expect(groups[1]?.operators.map((item) => item.id)).toEqual(['甲', '丙']);
+  });
+
+  it('会在分组里排除已删干员', () => {
+    const groups = buildOperatorGroups(operators, ['炎', '迅捷'], '', ['甲']);
+
+    expect(groups).toHaveLength(2);
+    expect(groups[0]?.operators.map((item) => item.id)).toEqual(['乙']);
+    expect(groups[1]?.operators.map((item) => item.id)).toEqual(['丙']);
   });
 });

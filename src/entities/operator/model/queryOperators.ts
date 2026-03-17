@@ -1,4 +1,4 @@
-import { normalizeSearchText } from '@/shared/lib/normalizeSearchText';
+import { getSearchKeywords } from '@/shared/lib/searchKeywords';
 import type { OperatorEntity } from '@/shared/types/domain';
 
 export function sortOperators(left: OperatorEntity, right: OperatorEntity) {
@@ -11,12 +11,19 @@ export function sortOperators(left: OperatorEntity, right: OperatorEntity) {
 
 export function matchesOperatorSearch(
   operator: OperatorEntity,
-  normalizedKeyword: string,
+  normalizedKeywords: string[],
 ) {
   return (
-    normalizedKeyword.length === 0 ||
-    operator.searchText.includes(normalizedKeyword)
+    normalizedKeywords.length === 0 ||
+    normalizedKeywords.every((keyword) => operator.searchText.includes(keyword))
   );
+}
+
+export function matchesOperatorRemoval(
+  operator: OperatorEntity,
+  removedOperatorIds: string[],
+) {
+  return !removedOperatorIds.includes(operator.id);
 }
 
 export function matchesOperatorCovenants(
@@ -35,16 +42,17 @@ export function filterOperators(
   operators: OperatorEntity[],
   selectedCovenantIds: string[],
   searchKeyword: string,
+  removedOperatorIds: string[] = [],
 ) {
   if (selectedCovenantIds.length === 0) {
     return [];
   }
 
-  const normalizedKeyword = normalizeSearchText(searchKeyword);
+  const normalizedKeywords = getSearchKeywords(searchKeyword);
 
   return operators
     .filter((operator) => matchesOperatorCovenants(operator, selectedCovenantIds))
-    .filter((operator) => matchesOperatorSearch(operator, normalizedKeyword))
+    .filter((operator) => matchesOperatorRemoval(operator, removedOperatorIds))
+    .filter((operator) => matchesOperatorSearch(operator, normalizedKeywords))
     .sort(sortOperators);
 }
-
