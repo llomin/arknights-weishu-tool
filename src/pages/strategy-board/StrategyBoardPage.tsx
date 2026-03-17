@@ -9,6 +9,7 @@ import { operators } from '@/entities/operator/model/normalizeOperators';
 import { useStrategyStore } from '@/features/strategy/model/useStrategyStore';
 import { buildHighlightSegments } from '@/shared/lib/highlightText';
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
+import type { OperatorEntity } from '@/shared/types/domain';
 import styles from './StrategyBoardPage.module.css';
 
 const tierClassNameMap = {
@@ -19,6 +20,11 @@ const tierClassNameMap = {
   2: styles.tier2,
   1: styles.tier1,
 } as const;
+
+const highPriorityBuckets = new Set<OperatorEntity['priorityBucket']>([
+  'each_and_layers',
+  'layers',
+]);
 
 export function StrategyBoardPage() {
   const selectedCovenantIds = useStrategyStore(
@@ -69,6 +75,102 @@ export function StrategyBoardPage() {
       >
         {covenantName}
       </button>
+    );
+  }
+
+  function renderOperatorCard(covenantId: string, operator: OperatorEntity) {
+    const isPicked = pickedOperatorIdSet.has(operator.id);
+    const traitTagSet = new Set(
+      operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
+    );
+    const highlightKeywords = [
+      ...searchKeywords,
+      ...operator.traitTags.filter((tag) => operator.description.includes(tag)),
+    ];
+    const descriptionSegments = buildHighlightSegments(
+      operator.description,
+      highlightKeywords,
+    );
+
+    return (
+      <article
+        key={`${covenantId}-${operator.id}`}
+        className={clsx(
+          styles.operatorCard,
+          tierClassNameMap[operator.tier],
+          isPicked && styles.operatorCardPicked,
+        )}
+        role="button"
+        tabIndex={0}
+        onClick={() => toggleOperator(operator.id)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleOperator(operator.id);
+          }
+        }}
+      >
+        <div className={styles.operatorTopRow}>
+          <div className={styles.operatorIdentity}>
+            <span className={styles.operatorName}>{operator.name}</span>
+          </div>
+
+          <button
+            className={styles.removeButton}
+            type="button"
+            aria-label={`移除 ${operator.name}`}
+            title={`移除 ${operator.name}`}
+            onKeyDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleRemovedOperator(operator.id);
+            }}
+          >
+            <svg className={styles.removeIcon} viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9.25 3.75h5.5M4.75 6.75h14.5M8 6.75v11a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5-1.5v-11M10.5 10.25v5.5M13.5 10.25v5.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <p className={styles.operatorDescription}>
+          {descriptionSegments.map((segment, index) => {
+            const isTraitTagSegment = traitTagSet.has(
+              segment.text.toLocaleLowerCase('zh-CN'),
+            );
+
+            if (isTraitTagSegment) {
+              return (
+                <span
+                  className={styles.operatorTag}
+                  key={`${operator.id}-${index}-${segment.text}`}
+                >
+                  {segment.text}
+                </span>
+              );
+            }
+
+            return segment.highlighted ? (
+              <mark
+                className={styles.descriptionHighlight}
+                key={`${operator.id}-${index}-${segment.text}`}
+              >
+                {segment.text}
+              </mark>
+            ) : (
+              <span key={`${operator.id}-${index}-${segment.text}`}>
+                {segment.text}
+              </span>
+            );
+          })}
+        </p>
+      </article>
     );
   }
 
@@ -166,125 +268,76 @@ export function StrategyBoardPage() {
         </section>
       ) : (
         <section className={styles.groupStack}>
-          {groups.map((group) => (
-            <article className={styles.groupPanel} key={group.covenantId}>
-              <header className={styles.groupHeader}>
-                <h2 className={styles.groupTitle}>{group.covenantName}</h2>
-                <div className={styles.groupMeta}>
-                  <span className={styles.groupMetaItem}>
-                    激活 {group.activationCount} 人
-                  </span>
-                  <span className={styles.groupMetaItem}>
-                    {group.operators.length} 名干员
-                  </span>
-                </div>
-              </header>
+          {groups.map((group) => {
+            const priorityOperators = group.operators.filter((operator) =>
+              highPriorityBuckets.has(operator.priorityBucket),
+            );
+            const otherOperators = group.operators.filter(
+              (operator) => !highPriorityBuckets.has(operator.priorityBucket),
+            );
+            const operatorSections = [
+              {
+                key: 'priority',
+                title: '优先拿牌',
+                hint: '先看层数联动和核心收益',
+                operators: priorityOperators,
+                className: styles.prioritySectionPrimary,
+              },
+              {
+                key: 'other',
+                title: '其他可选',
+                hint: '补位、过渡和条件牌',
+                operators: otherOperators,
+                className: styles.prioritySectionSecondary,
+              },
+            ].filter((section) => section.operators.length > 0);
 
-              <div className={styles.operatorGrid}>
-                {group.operators.map((operator) => {
-                  const isPicked = pickedOperatorIdSet.has(operator.id);
-                  const traitTagSet = new Set(
-                    operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
-                  );
-                  const highlightKeywords = [
-                    ...searchKeywords,
-                    ...operator.traitTags.filter((tag) =>
-                      operator.description.includes(tag),
-                    ),
-                  ];
-                  const descriptionSegments = buildHighlightSegments(
-                    operator.description,
-                    highlightKeywords,
-                  );
+            return (
+              <article className={styles.groupPanel} key={group.covenantId}>
+                <header className={styles.groupHeader}>
+                  <h2 className={styles.groupTitle}>{group.covenantName}</h2>
+                  <div className={styles.groupMeta}>
+                    <span className={styles.groupMetaItem}>
+                      激活 {group.activationCount} 人
+                    </span>
+                    <span className={styles.groupMetaItem}>
+                      {group.operators.length} 名干员
+                    </span>
+                    {priorityOperators.length > 0 ? (
+                      <span className={styles.groupMetaItem}>
+                        优先 {priorityOperators.length}
+                      </span>
+                    ) : null}
+                  </div>
+                </header>
 
-                  return (
-                    <article
-                      key={`${group.covenantId}-${operator.id}`}
-                      className={clsx(
-                        styles.operatorCard,
-                        tierClassNameMap[operator.tier],
-                        isPicked && styles.operatorCardPicked,
-                      )}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => toggleOperator(operator.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          toggleOperator(operator.id);
-                        }
-                      }}
+                <div className={styles.prioritySections}>
+                  {operatorSections.map((section) => (
+                    <section
+                      className={clsx(styles.prioritySection, section.className)}
+                      key={`${group.covenantId}-${section.key}`}
                     >
-                      <div className={styles.operatorTopRow}>
-                        <div className={styles.operatorIdentity}>
-                          <span className={styles.operatorName}>{operator.name}</span>
+                      <header className={styles.prioritySectionHeader}>
+                        <div className={styles.prioritySectionHeading}>
+                          <h3 className={styles.prioritySectionTitle}>{section.title}</h3>
+                          <p className={styles.prioritySectionHint}>{section.hint}</p>
                         </div>
+                        <span className={styles.prioritySectionCount}>
+                          {section.operators.length} 名
+                        </span>
+                      </header>
 
-                        <button
-                          className={styles.removeButton}
-                          type="button"
-                          aria-label={`移除 ${operator.name}`}
-                          title={`移除 ${operator.name}`}
-                          onKeyDown={(event) => event.stopPropagation()}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleRemovedOperator(operator.id);
-                          }}
-                        >
-                          <svg
-                            className={styles.removeIcon}
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path
-                              d="M9.25 3.75h5.5M4.75 6.75h14.5M8 6.75v11a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5-1.5v-11M10.5 10.25v5.5M13.5 10.25v5.5"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
+                      <div className={styles.operatorGrid}>
+                        {section.operators.map((operator) =>
+                          renderOperatorCard(group.covenantId, operator),
+                        )}
                       </div>
-
-                      <p className={styles.operatorDescription}>
-                        {descriptionSegments.map((segment, index) => {
-                          const isTraitTagSegment = traitTagSet.has(
-                            segment.text.toLocaleLowerCase('zh-CN'),
-                          );
-
-                          if (isTraitTagSegment) {
-                            return (
-                              <span
-                                className={styles.operatorTag}
-                                key={`${operator.id}-${index}-${segment.text}`}
-                              >
-                                {segment.text}
-                              </span>
-                            );
-                          }
-
-                          return segment.highlighted ? (
-                            <mark
-                              className={styles.descriptionHighlight}
-                              key={`${operator.id}-${index}-${segment.text}`}
-                            >
-                              {segment.text}
-                            </mark>
-                          ) : (
-                            <span key={`${operator.id}-${index}-${segment.text}`}>
-                              {segment.text}
-                            </span>
-                          );
-                        })}
-                      </p>
-                    </article>
-                  );
-                })}
-              </div>
-            </article>
-          ))}
+                    </section>
+                  ))}
+                </div>
+              </article>
+            );
+          })}
         </section>
       )}
     </main>

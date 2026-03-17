@@ -316,6 +316,72 @@
   font-size: 12px;
 }
 
+.prioritySections {
+  display: grid;
+  gap: 12px;
+}
+
+.prioritySection {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(88, 104, 134, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.prioritySectionPrimary {
+  border-color: rgba(79, 120, 183, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(170, 193, 231, 0.16) 0%,
+    rgba(255, 255, 255, 0.72) 100%
+  );
+}
+
+.prioritySectionSecondary {
+  border-color: rgba(88, 104, 134, 0.12);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.prioritySectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.prioritySectionHeading {
+  min-width: 0;
+}
+
+.prioritySectionTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.prioritySectionHint {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.prioritySectionCount {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(88, 104, 134, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .operatorGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -504,6 +570,11 @@
   }
 
   .groupHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .prioritySectionHeader {
     align-items: flex-start;
     flex-direction: column;
   }
