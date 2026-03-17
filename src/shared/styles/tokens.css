@@ -1,0 +1,36 @@
+:root {
+  color-scheme: light;
+  font-family:
+    'Segoe UI Variable',
+    'Microsoft YaHei UI',
+    'PingFang SC',
+    sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  --bg-primary: #f4f1ea;
+  --bg-secondary: rgba(255, 255, 255, 0.72);
+  --bg-elevated: rgba(255, 255, 255, 0.88);
+  --bg-accent: rgba(39, 60, 90, 0.08);
+  --text-primary: #27324a;
+  --text-secondary: #5d6a83;
+  --text-muted: #8792a4;
+  --border-primary: rgba(85, 102, 135, 0.18);
+  --border-strong: rgba(68, 88, 121, 0.28);
+  --shadow-panel: 0 24px 80px rgba(52, 69, 103, 0.14);
+  --shadow-soft: 0 10px 24px rgba(62, 83, 118, 0.1);
+
+  --tier-6-fg: #b85a63;
+  --tier-6-border: #e4a9af;
+  --tier-5-fg: #a88433;
+  --tier-5-border: #e4cf8e;
+  --tier-4-fg: #4f78b7;
+  --tier-4-border: #aac1e7;
+  --tier-3-fg: #4e8b63;
+  --tier-3-border: #abd3b6;
+  --tier-2-fg: #6f7786;
+  --tier-2-border: #d8dde6;
+  --tier-1-fg: #6d7380;
+  --tier-1-border: #b9c0cc;
+}
+
