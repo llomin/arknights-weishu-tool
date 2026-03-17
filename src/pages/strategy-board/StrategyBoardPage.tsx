@@ -46,6 +46,7 @@ export function StrategyBoardPage() {
 
   const deferredSearchKeyword = useDeferredValue(searchKeyword);
   const searchKeywords = getSearchKeywords(deferredSearchKeyword);
+  const selectedCovenantIdSet = new Set(selectedCovenantIds);
   const groups = buildOperatorGroups(
     operators,
     selectedCovenantIds,
@@ -78,8 +79,15 @@ export function StrategyBoardPage() {
     );
   }
 
+  function getMatchedSelectedCovenants(operator: OperatorEntity) {
+    return operator.covenants.filter((covenantId) =>
+      selectedCovenantIdSet.has(covenantId),
+    );
+  }
+
   function renderOperatorCard(covenantId: string, operator: OperatorEntity) {
     const isPicked = pickedOperatorIdSet.has(operator.id);
+    const matchedSelectedCovenants = getMatchedSelectedCovenants(operator);
     const traitTagSet = new Set(
       operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
     );
@@ -139,37 +147,53 @@ export function StrategyBoardPage() {
           </button>
         </div>
 
-        <p className={styles.operatorDescription}>
-          {descriptionSegments.map((segment, index) => {
-            const isTraitTagSegment = traitTagSet.has(
-              segment.text.toLocaleLowerCase('zh-CN'),
-            );
-
-            if (isTraitTagSegment) {
-              return (
+        <div className={styles.operatorDescription}>
+          {matchedSelectedCovenants.length >= 2 ? (
+            <div className={styles.matchedCovenants}>
+              <span className={styles.matchedCovenantsLabel}>命中盟约</span>
+              {matchedSelectedCovenants.map((covenantId) => (
                 <span
-                  className={styles.operatorTag}
+                  className={styles.matchedCovenantChip}
+                  key={`${operator.id}-${covenantId}`}
+                >
+                  {covenantId}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          <p className={styles.operatorDescriptionText}>
+            {descriptionSegments.map((segment, index) => {
+              const isTraitTagSegment = traitTagSet.has(
+                segment.text.toLocaleLowerCase('zh-CN'),
+              );
+
+              if (isTraitTagSegment) {
+                return (
+                  <span
+                    className={styles.operatorTag}
+                    key={`${operator.id}-${index}-${segment.text}`}
+                  >
+                    {segment.text}
+                  </span>
+                );
+              }
+
+              return segment.highlighted ? (
+                <mark
+                  className={styles.descriptionHighlight}
                   key={`${operator.id}-${index}-${segment.text}`}
                 >
                   {segment.text}
+                </mark>
+              ) : (
+                <span key={`${operator.id}-${index}-${segment.text}`}>
+                  {segment.text}
                 </span>
               );
-            }
-
-            return segment.highlighted ? (
-              <mark
-                className={styles.descriptionHighlight}
-                key={`${operator.id}-${index}-${segment.text}`}
-              >
-                {segment.text}
-              </mark>
-            ) : (
-              <span key={`${operator.id}-${index}-${segment.text}`}>
-                {segment.text}
-              </span>
-            );
-          })}
-        </p>
+            })}
+          </p>
+        </div>
       </article>
     );
   }
@@ -269,13 +293,26 @@ export function StrategyBoardPage() {
       ) : (
         <section className={styles.groupStack}>
           {groups.map((group) => {
-            const priorityOperators = group.operators.filter((operator) =>
+            const multiHitOperators = group.operators.filter(
+              (operator) => getMatchedSelectedCovenants(operator).length >= 2,
+            );
+            const remainingOperators = group.operators.filter(
+              (operator) => getMatchedSelectedCovenants(operator).length < 2,
+            );
+            const priorityOperators = remainingOperators.filter((operator) =>
               highPriorityBuckets.has(operator.priorityBucket),
             );
-            const otherOperators = group.operators.filter(
+            const otherOperators = remainingOperators.filter(
               (operator) => !highPriorityBuckets.has(operator.priorityBucket),
             );
             const operatorSections = [
+              {
+                key: 'multi-hit',
+                title: '多盟约命中',
+                hint: '同时命中多个已选盟约，先看这批联动牌',
+                operators: multiHitOperators,
+                className: styles.prioritySectionMultiHit,
+              },
               {
                 key: 'priority',
                 title: '优先拿牌',
@@ -303,6 +340,11 @@ export function StrategyBoardPage() {
                     <span className={styles.groupMetaItem}>
                       {group.operators.length} 名干员
                     </span>
+                    {multiHitOperators.length > 0 ? (
+                      <span className={styles.groupMetaItem}>
+                        多命中 {multiHitOperators.length}
+                      </span>
+                    ) : null}
                     {priorityOperators.length > 0 ? (
                       <span className={styles.groupMetaItem}>
                         优先 {priorityOperators.length}

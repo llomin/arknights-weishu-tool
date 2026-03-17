@@ -330,6 +330,15 @@
   background: rgba(255, 255, 255, 0.56);
 }
 
+.prioritySectionMultiHit {
+  border-color: rgba(46, 58, 85, 0.24);
+  background: linear-gradient(
+    180deg,
+    rgba(228, 207, 142, 0.18) 0%,
+    rgba(255, 255, 255, 0.76) 100%
+  );
+}
+
 .prioritySectionPrimary {
   border-color: rgba(79, 120, 183, 0.22);
   background: linear-gradient(
@@ -519,12 +528,45 @@
 }
 
 .operatorDescription {
+  display: grid;
+  gap: 8px;
+  align-content: start;
   align-self: stretch;
-  margin: 0;
   color: var(--text-primary);
   font-size: 13px;
   line-height: 1.55;
   word-break: break-word;
+}
+
+.operatorDescriptionText {
+  margin: 0;
+}
+
+.matchedCovenants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.matchedCovenantsLabel {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.matchedCovenantChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(46, 58, 85, 0.16);
+  border-radius: 999px;
+  background: rgba(46, 58, 85, 0.08);
+  color: #31415e;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .descriptionHighlight {
