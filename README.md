@@ -11,6 +11,9 @@
     <img alt="TypeScript 5" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
     <img alt="Vite 7" src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" />
   </p>
+  <p>
+    <img alt="卫戍协议助手预览图" src="assets/overview.png" />
+  </p>
 </div>
 
 ## 项目简介
