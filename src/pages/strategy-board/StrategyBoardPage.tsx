@@ -8,7 +8,13 @@ import {
 import { buildOperatorGroups } from '@/entities/operator/model/buildOperatorGroups';
 import { buildRecommendedLineup } from '@/entities/operator/model/buildRecommendedLineup';
 import { operators } from '@/entities/operator/model/normalizeOperators';
-import { filterOperators } from '@/entities/operator/model/queryOperators';
+import {
+  filterOperators,
+  matchesOperatorLevel,
+  matchesOperatorRemoval,
+  matchesOperatorSearch,
+  sortOperators,
+} from '@/entities/operator/model/queryOperators';
 import { useStrategyStore } from '@/features/strategy/model/useStrategyStore';
 import { buildHighlightSegments } from '@/shared/lib/highlightText';
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
@@ -92,17 +98,24 @@ export function StrategyBoardPage() {
   const visibleOperators = filterOperators(
     operators,
     selectedCovenantIds,
-    deferredSearchKeyword,
+    '',
     removedOperatorIds,
     currentLevel,
   );
   const groups = buildOperatorGroups(
     operators,
     selectedCovenantIds,
-    deferredSearchKeyword,
+    '',
     removedOperatorIds,
     currentLevel,
   );
+  const searchResultOperators = searchKeywords.length === 0
+    ? []
+    : operators
+        .filter((operator) => matchesOperatorRemoval(operator, removedOperatorIds))
+        .filter((operator) => matchesOperatorLevel(operator, currentLevel))
+        .filter((operator) => matchesOperatorSearch(operator, searchKeywords))
+        .sort(sortOperators);
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
   const maxVisibleTier = currentLevel === null ? null : Math.min(currentLevel + 1, 6);
   const selectedCovenantRequirements = selectedCovenantIds
@@ -260,6 +273,7 @@ export function StrategyBoardPage() {
     covenantId: string,
     operator: OperatorEntity,
     extraClassName?: string,
+    searchHighlightKeywords: string[] = [],
   ) {
     const isPicked = pickedOperatorIdSet.has(operator.id);
     const matchedSelectedCovenants = getMatchedSelectedCovenants(operator);
@@ -267,7 +281,7 @@ export function StrategyBoardPage() {
       operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
     );
     const highlightKeywords = [
-      ...searchKeywords,
+      ...searchHighlightKeywords,
       ...operator.traitTags.filter((tag) => operator.description.includes(tag)),
     ];
     const descriptionSegments = buildHighlightSegments(
@@ -384,6 +398,14 @@ export function StrategyBoardPage() {
   }
 
   function renderOperatorGrid(covenantId: string, operatorList: OperatorEntity[]) {
+    return renderOperatorGridWithHighlights(covenantId, operatorList, []);
+  }
+
+  function renderOperatorGridWithHighlights(
+    covenantId: string,
+    operatorList: OperatorEntity[],
+    searchHighlightKeywords: string[],
+  ) {
     const categoryRows = buildOperatorCategoryRows(operatorList);
 
     return (
@@ -409,11 +431,58 @@ export function StrategyBoardPage() {
             </div>
 
             <div className={styles.operatorRowCards}>
-              {operators.map((operator) => renderOperatorCard(covenantId, operator))}
+              {operators.map((operator) =>
+                renderOperatorCard(
+                  covenantId,
+                  operator,
+                  undefined,
+                  searchHighlightKeywords,
+                ),
+              )}
             </div>
           </section>
         ))}
       </div>
+    );
+  }
+
+  function renderSearchResultSection() {
+    if (searchKeywords.length === 0) {
+      return null;
+    }
+
+    return (
+      <section className={styles.searchResultSection}>
+        <header className={styles.searchResultHeader}>
+          <div className={styles.prioritySectionHeading}>
+            <h2 className={styles.prioritySectionTitle}>搜索结果</h2>
+            <p className={styles.prioritySectionHint}>
+              独立于盟约筛选展示，支持描述分词搜索。
+            </p>
+          </div>
+
+          <div className={styles.groupMeta}>
+            <span className={styles.groupMetaItem}>
+              关键词 {searchKeywords.join(' / ')}
+            </span>
+            <span className={styles.groupMetaItem}>
+              {searchResultOperators.length} 名干员
+            </span>
+          </div>
+        </header>
+
+        {searchResultOperators.length > 0 ? (
+          renderOperatorGridWithHighlights(
+            'search-results',
+            searchResultOperators,
+            searchKeywords,
+          )
+        ) : (
+          <div className={styles.searchResultEmpty}>
+            当前没有命中干员，试试减少关键词或调整当前等级。
+          </div>
+        )}
+      </section>
     );
   }
 
@@ -473,7 +542,7 @@ export function StrategyBoardPage() {
 
         <div className={styles.recommendationLineupGrid}>
           {sortedRecommendedOperators.map((operator) =>
-            renderOperatorCard('recommended', operator, styles.recommendationCard),
+            renderOperatorCard('recommended', operator),
           )}
           {Array.from({ length: recommendedLineup.emptySlotCount }, (_, index) => (
             <div
@@ -519,6 +588,8 @@ export function StrategyBoardPage() {
           </label>
         </div>
       </header>
+
+      {renderSearchResultSection()}
 
       <section className={styles.filterSection}>
         <div className={styles.filterMain}>

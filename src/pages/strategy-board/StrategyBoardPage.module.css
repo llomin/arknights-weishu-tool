@@ -76,6 +76,42 @@
   background: rgba(255, 255, 255, 0.96);
 }
 
+.searchResultSection {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(94, 121, 162, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(235, 242, 251, 0.82) 100%
+  );
+  box-shadow: var(--shadow-soft);
+}
+
+.searchResultHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.searchResultEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 92px;
+  padding: 16px;
+  border: 1px dashed rgba(94, 121, 162, 0.24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .ghostButton,
 .resetButton {
   display: inline-flex;
@@ -320,27 +356,75 @@
 }
 
 .recommendationSection {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   gap: 12px;
   margin-top: 14px;
   padding: 14px 16px;
-  border: 1px solid rgba(78, 125, 95, 0.18);
+  border: 1px solid transparent;
   border-radius: 18px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(235, 246, 236, 0.86) 100%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(235, 246, 236, 0.86) 100%
+    ) padding-box,
+    linear-gradient(
+      135deg,
+      #ff7f9f 0%,
+      #ffbe6b 18%,
+      #ffe76a 32%,
+      #5dd9a5 50%,
+      #62b6ff 68%,
+      #9a7cff 84%,
+      #ff7f9f 100%
+    ) border-box;
+  background-size: 100% 100%, 280% 280%;
   box-shadow: var(--shadow-soft);
+  animation: recommendationBorderShift 6s linear infinite;
+}
+
+.recommendationSection::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  z-index: -1;
+  border-radius: 22px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 127, 159, 0.22) 0%,
+    rgba(255, 190, 107, 0.18) 18%,
+    rgba(255, 231, 106, 0.14) 32%,
+    rgba(93, 217, 165, 0.16) 50%,
+    rgba(98, 182, 255, 0.18) 68%,
+    rgba(154, 124, 255, 0.2) 84%,
+    rgba(255, 127, 159, 0.22) 100%
+  );
+  background-size: 280% 280%;
+  filter: blur(14px);
+  opacity: 0.52;
+  animation: recommendationBorderShift 6s linear infinite;
 }
 
 .recommendationSectionImpossible {
-  border-color: rgba(184, 90, 99, 0.24);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.94) 0%,
-    rgba(250, 237, 239, 0.88) 100%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94) 0%,
+      rgba(250, 237, 239, 0.88) 100%
+    ) padding-box,
+    linear-gradient(
+      135deg,
+      #ff8d9f 0%,
+      #ffc46c 18%,
+      #ffe16f 32%,
+      #68d7a8 50%,
+      #68b4ff 68%,
+      #a07fff 84%,
+      #ff8d9f 100%
+    ) border-box;
 }
 
 .recommendationHeader {
@@ -383,47 +467,6 @@
   justify-content: center;
   max-width: 742px;
   margin: 0 auto;
-}
-
-.recommendationCard {
-  position: relative;
-  border-color: transparent;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)) padding-box,
-    linear-gradient(
-      135deg,
-      #ff7f9f 0%,
-      #ffbe6b 18%,
-      #ffe76a 32%,
-      #5dd9a5 50%,
-      #62b6ff 68%,
-      #9a7cff 84%,
-      #ff7f9f 100%
-    ) border-box;
-  background-size: 100% 100%, 280% 280%;
-  animation: recommendationBorderShift 6s linear infinite;
-}
-
-.recommendationCard::before {
-  content: '';
-  position: absolute;
-  inset: -8px;
-  z-index: -1;
-  border-radius: 18px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 127, 159, 0.26) 0%,
-    rgba(255, 190, 107, 0.22) 18%,
-    rgba(255, 231, 106, 0.18) 32%,
-    rgba(93, 217, 165, 0.2) 50%,
-    rgba(98, 182, 255, 0.22) 68%,
-    rgba(154, 124, 255, 0.24) 84%,
-    rgba(255, 127, 159, 0.26) 100%
-  );
-  background-size: 280% 280%;
-  filter: blur(12px);
-  opacity: 0.58;
-  animation: recommendationBorderShift 6s linear infinite;
 }
 
 .recommendationPlaceholder {
@@ -1141,6 +1184,7 @@
     grid-template-columns: 1fr;
   }
 
+  .searchResultHeader,
   .recommendationHeader,
   .groupHeader {
     align-items: flex-start;
@@ -1165,6 +1209,7 @@
   }
 
   .filterSection,
+  .searchResultSection,
   .groupPanel {
     padding-left: 12px;
     padding-right: 12px;
