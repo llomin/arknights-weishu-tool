@@ -13,7 +13,7 @@ const operators: OperatorEntity[] = [
     description: '每次攻击使已激活的[炎]层数+2',
     tierLabel: '6阶',
     tier: 6,
-    priorityBucket: 'each_and_layers',
+    priorityBucket: '持续叠加',
     priorityWeight: 0,
     searchText: '每次攻击使已激活的[炎]层数+2',
   },
@@ -26,8 +26,8 @@ const operators: OperatorEntity[] = [
     description: '<获得时>使自身攻击力提升',
     tierLabel: '5阶',
     tier: 5,
-    priorityBucket: 'gain',
-    priorityWeight: 2,
+    priorityBucket: '单次叠加',
+    priorityWeight: 1,
     searchText: '<获得时>使自身攻击力提升',
   },
   {
@@ -39,8 +39,8 @@ const operators: OperatorEntity[] = [
     description: '攻击速度提升(受层数影响)',
     tierLabel: '4阶',
     tier: 4,
-    priorityBucket: 'layers',
-    priorityWeight: 1,
+    priorityBucket: '作战能力',
+    priorityWeight: 4,
     searchText: '攻击速度提升(受层数影响)',
   },
 ];
@@ -65,12 +65,12 @@ describe('filterOperators', () => {
       filterOperators(operators, ['炎', '迅捷'], '', ['甲']).map(
         (item) => item.id,
       ),
-    ).toEqual(['丙', '乙']);
+    ).toEqual(['乙', '丙']);
   });
 
   it('按优先级和阶位排序', () => {
     expect(filterOperators(operators, ['炎', '迅捷'], '').map((item) => item.id)).toEqual(
-      ['甲', '丙', '乙'],
+      ['甲', '乙', '丙'],
     );
   });
 });

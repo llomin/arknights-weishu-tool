@@ -1,9 +1,10 @@
 export type OperatorPriorityBucket =
-  | 'each_and_layers'
-  | 'layers'
-  | 'gain'
-  | 'same_as'
-  | 'other';
+  | '持续叠加'
+  | '单次叠加'
+  | '特异化'
+  | '整备能力'
+  | '作战能力'
+  | '其他';
 
 export interface CovenantEntity {
   id: string;

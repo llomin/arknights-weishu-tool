@@ -8,7 +8,7 @@
   line-height: 1.5;
   font-weight: 400;
 
-  --bg-primary: #f4f1ea;
+  --bg-primary: #edf4eb;
   --bg-secondary: rgba(255, 255, 255, 0.72);
   --bg-elevated: rgba(255, 255, 255, 0.88);
   --bg-accent: rgba(39, 60, 90, 0.08);
@@ -33,4 +33,3 @@
   --tier-1-fg: #6d7380;
   --tier-1-border: #b9c0cc4f;
 }
-

@@ -11,11 +11,12 @@ describe('normalizeOperators', () => {
   });
 
   it('计算出稳定的优先级统计', () => {
-    expect(prioritySummary.each_and_layers).toBe(25);
-    expect(prioritySummary.layers).toBe(42);
-    expect(prioritySummary.gain).toBe(22);
-    expect(prioritySummary.same_as).toBe(2);
-    expect(prioritySummary.other).toBe(24);
+    expect(prioritySummary['持续叠加']).toBe(50);
+    expect(prioritySummary['单次叠加']).toBe(17);
+    expect(prioritySummary['特异化']).toBe(4);
+    expect(prioritySummary['整备能力']).toBe(23);
+    expect(prioritySummary['作战能力']).toBe(21);
+    expect(prioritySummary['其他']).toBe(0);
   });
 
   it('保留原始阶位分布', () => {

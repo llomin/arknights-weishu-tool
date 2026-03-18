@@ -47,7 +47,7 @@ function sortOperators(left: OperatorEntity, right: OperatorEntity) {
 export const operators = Object.entries(parsedOperators)
   .map<OperatorEntity>(([name, value]) => {
     const description = value.trait.description;
-    const priorityBucket = getOperatorPriorityBucket(description);
+    const priorityBucket = getOperatorPriorityBucket(value.trait.category);
 
     return {
       id: name,
@@ -89,10 +89,11 @@ export const prioritySummary = operators.reduce<
     return summary;
   },
   {
-    each_and_layers: 0,
-    layers: 0,
-    gain: 0,
-    same_as: 0,
-    other: 0,
+    持续叠加: 0,
+    单次叠加: 0,
+    特异化: 0,
+    整备能力: 0,
+    作战能力: 0,
+    其他: 0,
   },
 );

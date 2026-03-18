@@ -5,40 +5,43 @@ import {
 } from '@/entities/operator/model/operatorPriority';
 
 describe('getOperatorPriorityBucket', () => {
-  it('优先命中同时包含“每”和“层数”的描述', () => {
-    expect(
-      getOperatorPriorityBucket('每击倒2名敌人,使已激活的[突袭]层数+2'),
-    ).toBe('each_and_layers');
+  it('识别持续叠加分类', () => {
+    expect(getOperatorPriorityBucket('持续叠加')).toBe('持续叠加');
   });
 
-  it('其次命中包含“层数”的描述', () => {
-    expect(getOperatorPriorityBucket('攻击力提升(受层数影响)')).toBe(
-      'layers',
-    );
+  it('识别单次叠加分类', () => {
+    expect(getOperatorPriorityBucket('单次叠加')).toBe('单次叠加');
   });
 
-  it('再命中包含“获得”的描述', () => {
-    expect(getOperatorPriorityBucket('<获得时>使自身攻击力提升')).toBe('gain');
+  it('识别特异化分类', () => {
+    expect(getOperatorPriorityBucket('特异化')).toBe('特异化');
   });
 
-  it('最后命中包含“与其相同”的描述', () => {
-    expect(getOperatorPriorityBucket('使攻击范围内干员与其相同')).toBe(
-      'same_as',
-    );
+  it('识别整备能力分类', () => {
+    expect(getOperatorPriorityBucket('整备能力')).toBe('整备能力');
   });
 
   it('其余归类为其他', () => {
-    expect(getOperatorPriorityBucket('攻击速度提升')).toBe('other');
+    expect(getOperatorPriorityBucket('未知分类')).toBe('其他');
   });
 });
 
 describe('getOperatorPriorityWeight', () => {
   it('返回稳定的排序权重', () => {
-    expect(getOperatorPriorityWeight('each_and_layers')).toBeLessThan(
-      getOperatorPriorityWeight('layers'),
+    expect(getOperatorPriorityWeight('持续叠加')).toBeLessThan(
+      getOperatorPriorityWeight('单次叠加'),
     );
-    expect(getOperatorPriorityWeight('layers')).toBeLessThan(
-      getOperatorPriorityWeight('gain'),
+    expect(getOperatorPriorityWeight('单次叠加')).toBeLessThan(
+      getOperatorPriorityWeight('特异化'),
+    );
+    expect(getOperatorPriorityWeight('特异化')).toBeLessThan(
+      getOperatorPriorityWeight('整备能力'),
+    );
+    expect(getOperatorPriorityWeight('整备能力')).toBeLessThan(
+      getOperatorPriorityWeight('作战能力'),
+    );
+    expect(getOperatorPriorityWeight('作战能力')).toBeLessThan(
+      getOperatorPriorityWeight('其他'),
     );
   });
 });

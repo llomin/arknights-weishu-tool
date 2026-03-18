@@ -352,31 +352,65 @@
 }
 
 .prioritySection {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   gap: 10px;
   padding: 12px;
   border: 1px solid rgba(88, 104, 134, 0.12);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.56);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(251, 248, 241, 0.76) 100%
+  );
+}
+
+.prioritySection::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.prioritySection > * {
+  position: relative;
+  z-index: 1;
 }
 
 .prioritySectionMultiHit {
-  border-color: rgba(46, 58, 85, 0.24);
+  border-color: rgba(86, 118, 146, 0.26);
   background: linear-gradient(
     180deg,
-    rgba(228, 207, 142, 0.18) 0%,
-    rgba(255, 255, 255, 0.76) 100%
+    rgba(247, 250, 252, 0.96) 0%,
+    rgba(229, 238, 245, 0.86) 56%,
+    rgba(255, 255, 255, 0.8) 100%
   );
 }
 
+.prioritySectionMultiHit::before {
+  background:
+    radial-gradient(circle at top left, rgba(170, 193, 231, 0.38), transparent 30%),
+    radial-gradient(circle at 86% 18%, rgba(208, 228, 235, 0.28), transparent 22%),
+    linear-gradient(90deg, rgba(83, 118, 159, 0.1) 0%, transparent 26%);
+}
+
 .prioritySectionPrimary {
-  border-color: rgba(58, 117, 214, 0.28);
+  border-color: rgba(191, 150, 86, 0.26);
   background: linear-gradient(
     180deg,
-    rgba(92, 153, 255, 0.24) 0%,
-    rgba(214, 231, 255, 0.82) 52%,
-    rgba(255, 255, 255, 0.74) 100%
+    rgba(255, 252, 246, 0.98) 0%,
+    rgba(250, 239, 206, 0.88) 54%,
+    rgba(255, 255, 255, 0.82) 100%
   );
+}
+
+.prioritySectionPrimary::before {
+  background:
+    radial-gradient(circle at top right, rgba(255, 229, 156, 0.42), transparent 24%),
+    radial-gradient(circle at left 14%, rgba(233, 214, 164, 0.32), transparent 28%),
+    linear-gradient(135deg, rgba(191, 150, 86, 0.12) 0%, transparent 40%);
 }
 
 .prioritySectionSecondary {
@@ -469,9 +503,61 @@
 
 .operatorGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 208px));
   gap: 10px;
-  justify-content: flex-start;
+}
+
+.operatorCategoryRow {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.operatorCategoryRowHeader {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+}
+
+.operatorCategoryLabel {
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  animation: none;
+}
+
+.operatorCategoryCount {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.operatorRowCards {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(126, 149, 134, 0.42) transparent;
+}
+
+.operatorRowCards::-webkit-scrollbar {
+  height: 8px;
+}
+
+.operatorRowCards::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(126, 149, 134, 0.38);
+}
+
+.operatorRowCards::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.operatorRowCards > .operatorCard {
+  flex: 0 0 min(208px, calc(100vw - 44px));
+  width: min(208px, calc(100vw - 44px));
 }
 
 .operatorCard {
@@ -660,17 +746,117 @@
 
 .operatorDescription {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   align-content: start;
   align-self: stretch;
   color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 11px;
+  line-height: 1.42;
   word-break: break-word;
 }
 
 .operatorDescriptionText {
   margin: 0;
+}
+
+.traitCategoryBadge {
+  --trait-bg-base: rgba(198, 207, 220, 0.88);
+  --trait-bg-soft: rgba(241, 244, 248, 0.96);
+  --trait-border: rgba(104, 120, 145, 0.28);
+  --trait-text: #45536d;
+  --trait-shadow: rgba(84, 97, 120, 0.12);
+  --trait-glow: rgba(164, 178, 203, 0.16);
+  --trait-sheen-opacity: 0.18;
+  --trait-sheen-duration: 7.6s;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--trait-border);
+  border-radius: 999px;
+  background-image:
+    linear-gradient(135deg, var(--trait-bg-base) 0%, var(--trait-bg-soft) 100%),
+    linear-gradient(
+      120deg,
+      transparent 18%,
+      rgba(255, 255, 255, var(--trait-sheen-opacity)) 48%,
+      transparent 78%
+    );
+  background-size: 100% 100%, 230% 100%;
+  background-position: 0 0, 150% 0;
+  color: var(--trait-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  white-space: nowrap;
+  animation: traitCategorySweep var(--trait-sheen-duration) linear infinite;
+}
+
+.traitCategoryContinuous {
+  --trait-bg-base: rgba(255, 205, 82, 0.96);
+  --trait-bg-soft: rgba(255, 244, 190, 0.98);
+  --trait-border: rgba(221, 155, 17, 0.6);
+  --trait-text: #7f4700;
+  --trait-shadow: rgba(228, 167, 26, 0.24);
+  --trait-glow: rgba(255, 207, 74, 0.44);
+  --trait-sheen-opacity: 0.72;
+  --trait-sheen-duration: 2.8s;
+}
+
+.traitCategorySingle {
+  --trait-bg-base: rgba(255, 153, 106, 0.94);
+  --trait-bg-soft: rgba(255, 224, 197, 0.98);
+  --trait-border: rgba(220, 108, 51, 0.52);
+  --trait-text: #813217;
+  --trait-shadow: rgba(220, 116, 63, 0.2);
+  --trait-glow: rgba(255, 163, 120, 0.34);
+  --trait-sheen-opacity: 0.52;
+  --trait-sheen-duration: 3.6s;
+}
+
+.traitCategorySpecialized {
+  --trait-bg-base: rgba(118, 213, 214, 0.9);
+  --trait-bg-soft: rgba(224, 249, 250, 0.96);
+  --trait-border: rgba(56, 156, 164, 0.44);
+  --trait-text: #18515b;
+  --trait-shadow: rgba(61, 150, 161, 0.16);
+  --trait-glow: rgba(124, 223, 226, 0.26);
+  --trait-sheen-opacity: 0.34;
+  --trait-sheen-duration: 5.2s;
+}
+
+.traitCategorySetup {
+  --trait-bg-base: rgba(142, 208, 135, 0.88);
+  --trait-bg-soft: rgba(234, 248, 228, 0.96);
+  --trait-border: rgba(83, 162, 95, 0.38);
+  --trait-text: #24552f;
+  --trait-shadow: rgba(84, 146, 89, 0.14);
+  --trait-glow: rgba(159, 224, 151, 0.2);
+  --trait-sheen-opacity: 0.24;
+  --trait-sheen-duration: 6.4s;
+}
+
+.traitCategoryCombat {
+  --trait-bg-base: rgba(138, 168, 213, 0.84);
+  --trait-bg-soft: rgba(229, 238, 250, 0.96);
+  --trait-border: rgba(79, 116, 173, 0.36);
+  --trait-text: #28456e;
+  --trait-shadow: rgba(74, 104, 156, 0.14);
+  --trait-glow: rgba(149, 183, 230, 0.18);
+  --trait-sheen-opacity: 0.2;
+  --trait-sheen-duration: 7s;
+}
+
+.traitCategoryOther {
+  --trait-bg-base: rgba(205, 212, 221, 0.84);
+  --trait-bg-soft: rgba(244, 246, 250, 0.96);
+  --trait-border: rgba(126, 138, 157, 0.28);
+  --trait-text: #4a576f;
+  --trait-shadow: rgba(94, 106, 124, 0.1);
+  --trait-glow: rgba(168, 177, 191, 0.14);
+  --trait-sheen-opacity: 0.16;
+  --trait-sheen-duration: 8.4s;
 }
 
 .matchedCovenants {
@@ -737,6 +923,16 @@
   --tier-border: var(--tier-1-border);
 }
 
+@keyframes traitCategorySweep {
+  from {
+    background-position: 0 0, 150% 0;
+  }
+
+  to {
+    background-position: 0 0, -90% 0;
+  }
+}
+
 @media (max-width: 980px) {
   .header {
     grid-template-columns: 1fr;
@@ -785,10 +981,30 @@
   }
 
   .operatorGrid {
+    gap: 12px;
+  }
+
+  .operatorCategoryRow {
     grid-template-columns: 1fr;
+  }
+
+  .operatorCategoryRowHeader {
+    grid-auto-flow: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .operatorCategoryCount {
+    text-align: right;
   }
 
   .operatorCard {
     max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .traitCategoryBadge {
+    animation: none;
   }
 }

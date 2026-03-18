@@ -22,11 +22,29 @@ const tierClassNameMap = {
   1: styles.tier1,
 } as const;
 
+const traitCategoryClassNameMap = {
+  持续叠加: styles.traitCategorySingle,
+  单次叠加: styles.traitCategoryContinuous,
+  特异化: styles.traitCategorySpecialized,
+  整备能力: styles.traitCategoryCombat,
+  作战能力: styles.traitCategorySetup,
+  其他: styles.traitCategoryOther,
+} as const;
+
 const highPriorityBuckets = new Set<OperatorEntity['priorityBucket']>([
-  'each_and_layers',
-  'layers',
+  '持续叠加',
+  '单次叠加',
+  '特异化',
 ]);
 const selectableLevels = [1, 2, 3, 4, 5, 6] as const;
+const operatorCategoryOrder: OperatorEntity['priorityBucket'][] = [
+  '持续叠加',
+  '单次叠加',
+  '特异化',
+  '整备能力',
+  '作战能力',
+  '其他',
+];
 
 export function StrategyBoardPage() {
   const selectedCovenantIds = useStrategyStore(
@@ -34,7 +52,6 @@ export function StrategyBoardPage() {
   );
   const currentLevel = useStrategyStore((state) => state.currentLevel);
   const searchKeyword = useStrategyStore((state) => state.searchKeyword);
-  const favoriteOperatorIds = useStrategyStore((state) => state.favoriteOperatorIds);
   const pickedOperatorIds = useStrategyStore((state) => state.pickedOperatorIds);
   const removedOperatorIds = useStrategyStore((state) => state.removedOperatorIds);
   const restoreRemovedOperators = useStrategyStore(
@@ -42,9 +59,6 @@ export function StrategyBoardPage() {
   );
   const toggleCovenant = useStrategyStore((state) => state.toggleCovenant);
   const toggleCurrentLevel = useStrategyStore((state) => state.toggleCurrentLevel);
-  const toggleFavoriteOperator = useStrategyStore(
-    (state) => state.toggleFavoriteOperator,
-  );
   const toggleOperator = useStrategyStore((state) => state.toggleOperator);
   const toggleRemovedOperator = useStrategyStore(
     (state) => state.toggleRemovedOperator,
@@ -61,7 +75,6 @@ export function StrategyBoardPage() {
     deferredSearchKeyword,
     removedOperatorIds,
     currentLevel,
-    favoriteOperatorIds,
   );
   const groups = buildOperatorGroups(
     operators,
@@ -69,9 +82,7 @@ export function StrategyBoardPage() {
     deferredSearchKeyword,
     removedOperatorIds,
     currentLevel,
-    favoriteOperatorIds,
   );
-  const favoriteOperatorIdSet = new Set(favoriteOperatorIds);
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
   const maxVisibleTier = currentLevel === null ? null : Math.min(currentLevel + 1, 6);
 
@@ -163,10 +174,19 @@ export function StrategyBoardPage() {
     ).size;
   }
 
+  function buildOperatorCategoryRows(operators: OperatorEntity[]) {
+    return operatorCategoryOrder
+      .map((category) => ({
+        category,
+        operators: operators.filter((operator) => operator.priorityBucket === category),
+      }))
+      .filter((row) => row.operators.length > 0);
+  }
+
   function renderOperatorCard(covenantId: string, operator: OperatorEntity) {
-    const isFavorite = favoriteOperatorIdSet.has(operator.id);
     const isPicked = pickedOperatorIdSet.has(operator.id);
     const matchedSelectedCovenants = getMatchedSelectedCovenants(operator);
+    const traitCategoryClassName = traitCategoryClassNameMap[operator.priorityBucket];
     const traitTagSet = new Set(
       operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
     );
@@ -200,30 +220,6 @@ export function StrategyBoardPage() {
         <div className={styles.operatorTopRow}>
           <div className={styles.operatorIdentity}>
             <span className={styles.operatorName}>{operator.name}</span>
-            <button
-              className={clsx(
-                styles.favoriteButton,
-                isFavorite && styles.favoriteButtonActive,
-              )}
-              type="button"
-              aria-label={isFavorite ? `取消收藏 ${operator.name}` : `收藏 ${operator.name}`}
-              title={isFavorite ? `取消收藏 ${operator.name}` : `收藏 ${operator.name}`}
-              onKeyDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                toggleFavoriteOperator(operator.id);
-              }}
-            >
-              <svg className={styles.favoriteIcon} viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 3.8l2.52 5.11 5.64.82-4.08 3.97.97 5.62L12 16.68 6.95 19.32l.97-5.62-4.08-3.97 5.64-.82L12 3.8z"
-                  fill={isFavorite ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
           </div>
 
           <button
@@ -298,6 +294,40 @@ export function StrategyBoardPage() {
           </p>
         </div>
       </article>
+    );
+  }
+
+  function renderOperatorGrid(covenantId: string, operatorList: OperatorEntity[]) {
+    const categoryRows = buildOperatorCategoryRows(operatorList);
+
+    return (
+      <div className={styles.operatorGrid}>
+        {categoryRows.map(({ category, operators }) => (
+          <section
+            className={styles.operatorCategoryRow}
+            key={`${covenantId}-${category}`}
+          >
+            <div className={styles.operatorCategoryRowHeader}>
+              <span
+                className={clsx(
+                  styles.traitCategoryBadge,
+                  styles.operatorCategoryLabel,
+                  traitCategoryClassNameMap[category],
+                )}
+              >
+                {category}
+              </span>
+              <span className={styles.operatorCategoryCount}>
+                {operators.length} 名
+              </span>
+            </div>
+
+            <div className={styles.operatorRowCards}>
+              {operators.map((operator) => renderOperatorCard(covenantId, operator))}
+            </div>
+          </section>
+        ))}
+      </div>
     );
   }
 
@@ -407,7 +437,7 @@ export function StrategyBoardPage() {
         <section className={styles.emptyState}>
           <h2 className={styles.emptyTitle}>先选盟约，再看干员</h2>
           <p className={styles.emptyDescription}>
-            干员会按已选盟约分组展示，并直接根据描述优先级排序。
+            干员会按已选盟约分组展示，并直接根据特质分类优先级排序。
           </p>
         </section>
       ) : groups.length === 0 ? (
@@ -449,11 +479,7 @@ export function StrategyBoardPage() {
                       </div>
                     </header>
 
-                    <div className={styles.operatorGrid}>
-                      {multiHitOperators.map((operator) =>
-                        renderOperatorCard('multi-hit', operator),
-                      )}
-                    </div>
+                    {renderOperatorGrid('multi-hit', multiHitOperators)}
                   </section>
                 ) : null}
 
@@ -468,7 +494,7 @@ export function StrategyBoardPage() {
                       <div className={styles.prioritySectionHeading}>
                         <h2 className={styles.prioritySectionTitle}>优先拿牌</h2>
                         <p className={styles.prioritySectionHint}>
-                          先看层数联动和核心收益
+                          先看持续叠加、单次叠加和特异化这三类核心特质
                         </p>
                       </div>
                       <div className={styles.groupMeta}>
@@ -501,11 +527,7 @@ export function StrategyBoardPage() {
                             </div>
                           </header>
 
-                          <div className={styles.operatorGrid}>
-                            {group.operators.map((operator) =>
-                              renderOperatorCard(group.covenantId, operator),
-                            )}
-                          </div>
+                          {renderOperatorGrid(group.covenantId, group.operators)}
                         </article>
                       ))}
                     </div>
@@ -556,11 +578,7 @@ export function StrategyBoardPage() {
                             </div>
                           </header>
 
-                          <div className={styles.operatorGrid}>
-                            {group.operators.map((operator) =>
-                              renderOperatorCard(group.covenantId, operator),
-                            )}
-                          </div>
+                          {renderOperatorGrid(group.covenantId, group.operators)}
                         </article>
                       ))}
                     </div>
