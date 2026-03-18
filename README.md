@@ -1,223 +1,120 @@
-# 卫戍协议拿牌策略工具
+# 卫戍协议助手
 
-一个基于 `Vite + React + TypeScript` 的静态数据驱动工具，用来辅助“卫戍协议”对局内的盟约筛选与拿牌决策。
+<div align="center">
+  <p>一个面向《明日方舟》“卫戍协议”模式的盟约筛选与抓牌辅助工具。</p>
+  <p>打开即用，优先推荐直接访问在线版。</p>
+  <p>
+    <a href="https://arknights-weishu-tool.vercel.app/"><strong>在线体验</strong></a>
+  </p>
+  <p>
+    <a href="https://arknights-weishu-tool.vercel.app/">
+      <img alt="在线体验" src="https://img.shields.io/badge/在线体验-Vercel-000000?logo=vercel&logoColor=white" />
+    </a>
+    <img alt="React 19" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
+    <img alt="TypeScript 5" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+    <img alt="Vite 7" src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" />
+  </p>
+</div>
 
-当前版本已实现：
+## 在线体验
 
-- 盟约多选筛选
-- 按盟约分组展示干员
-- 按描述关键字搜索，支持空格分词
-- 按业务优先级 + 阶位稳定排序
-- 点击卡片标记“已拿牌”
-- 单独移除本局不再考虑的干员，并支持恢复
-- 描述命中词高亮
+如果你只是想直接查牌、筛盟约、看推荐阵容，可以直接访问在线版本体验效果：
 
-## 快速开始
+- https://arknights-weishu-tool.vercel.app/
 
-### 1. 安装依赖
+## 项目简介
+
+这个项目把“选盟约 -> 看可用干员 -> 组推荐阵容”这条流程做成了一个静态网页工具，适合在卫戍协议对局中快速辅助决策。
+
+它目前重点解决这些问题：
+
+- 已选盟约下，哪些干员值得优先拿
+- 当前人口和等级限制下，能不能凑出满足条件的阵容
+- 看到某类描述时，如何快速搜索对应干员
+- 某些干员这局不想考虑时，如何临时排除再继续看牌
+
+整个项目基于本地静态 JSON 数据驱动，没有后端依赖。
+
+## 功能概述
+
+- 盟约多选筛选，并支持在不同激活人数阶段之间循环切换
+- 根据已选盟约、最大人口和当前等级自动计算推荐阵容
+- 按特质类别优先展示“优先抓牌”和“其他可选”
+- 支持描述分词搜索，关键词命中会高亮
+- 支持局内临时移除干员、恢复已删、标记已抓牌
+- 在线版打开即用，适合桌面和移动端快速查表
+
+## 使用说明
+
+1. 打开在线版，进入首页后先在“盟约筛选”里点选盟约。
+2. 同一个盟约可以连续点击，在不同激活人数阶段之间循环切换；点到最后一次会取消选择。
+3. 按当前局势设置“最大人口”和“当前等级”。
+4. 页面会自动给出“推荐阵容”，并把可用干员按优先级分成“优先抓牌”和“其他可选”。
+5. 如果你想直接查某类效果，可以在“描述搜索”中输入关键词，支持空格分词，例如：`获得 层数`。
+6. 某个干员这局不想再看时，点卡片右上角移除；想重新开始时，点“再来一把”。
+
+## 使用小贴士
+
+- 搜索结果区域独立于盟约筛选，适合直接按描述查牌。
+- 当前等级开启后，会过滤掉高于“当前等级 + 1”的干员。
+- 推荐阵容会根据已选盟约阶段自动搜索；如果条件无法同时满足，页面会直接给出原因。
+
+## 本地运行
+
+### 环境要求
+
+- Node.js 20+
+- npm
+
+### 安装依赖
 
 ```bash
 npm install
 ```
 
-### 2. 启动开发环境
+### 启动开发环境
 
 ```bash
 npm run dev
 ```
 
-默认使用 Vite 本地开发服务器。
+启动后按 Vite 控制台输出的本地地址访问即可。
 
-### 3. 常用命令
+<details>
+<summary>开发者补充</summary>
+
+### 常用命令
 
 | 命令 | 说明 |
 | --- | --- |
-| `npm run dev` | 启动开发环境 |
-| `npm run build` | TypeScript 构建检查 + 生产打包 |
-| `npm run preview` | 预览打包结果 |
+| `npm run dev` | 启动本地开发服务器 |
+| `npm run build` | TypeScript 检查并打包生产构建 |
+| `npm run preview` | 本地预览构建产物 |
 | `npm run lint` | 运行 ESLint |
-| `npm run test` | 运行 Vitest 单测 |
+| `npm run test` | 运行 Vitest 单元测试 |
 | `npm run test:watch` | 监听模式运行测试 |
 
-## 技术栈
+### 技术栈
 
-- `Vite 7`
-- `React 19`
-- `TypeScript 5`
-- `Zustand`：承载页面交互状态
-- `Zod`：校验本地 JSON 数据结构
-- `CSS Modules` + 全局样式令牌
-- `Vitest` + `Testing Library`
+- Vite 7
+- React 19
+- TypeScript 5
+- Zustand
+- Zod
+- Vitest + Testing Library
 
-## 项目结构
+### 项目结构
 
 ```text
-.
-├─ data/                     # 原始业务数据
-├─ docs/                     # 设计与说明文档
-├─ src/
-│  ├─ app/                   # 应用入口
-│  ├─ entities/              # 领域模型：盟约、干员
-│  ├─ features/              # 交互状态与行为
-│  ├─ pages/                 # 页面级组合
-│  ├─ shared/                # 通用类型、工具函数、样式令牌
-│  └─ tests/                 # 测试初始化
-├─ tests/                    # 纯逻辑测试
-├─ dist/                     # 构建产物，不要手改
-└─ vite.config.ts            # Vite / Vitest 配置
+data/   # 本地静态数据
+src/    # 页面、领域模型与交互逻辑
+tests/  # 纯逻辑测试
 ```
 
-## 关键入口
+### 数据说明
 
-- 页面入口：[src/app/App.tsx](/D:/Project/js/arknights-weishu-tool/src/app/App.tsx)
-- 主页面：[src/pages/strategy-board/StrategyBoardPage.tsx](/D:/Project/js/arknights-weishu-tool/src/pages/strategy-board/StrategyBoardPage.tsx)
-- 状态管理：[src/features/strategy/model/useStrategyStore.ts](/D:/Project/js/arknights-weishu-tool/src/features/strategy/model/useStrategyStore.ts)
-- 盟约标准化：[src/entities/covenant/model/normalizeCovenants.ts](/D:/Project/js/arknights-weishu-tool/src/entities/covenant/model/normalizeCovenants.ts)
-- 干员标准化：[src/entities/operator/model/normalizeOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/normalizeOperators.ts)
-- 筛选与排序：[src/entities/operator/model/queryOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/queryOperators.ts)
-- 分组逻辑：[src/entities/operator/model/buildOperatorGroups.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/buildOperatorGroups.ts)
-- 排序优先级规则：[src/entities/operator/model/operatorPriority.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operatorPriority.ts)
-- 初始设计文档：[docs/项目初始化设计.md](/D:/Project/js/arknights-weishu-tool/docs/项目初始化设计.md)
+- 本项目当前使用 `data/covenants.json` 和 `data/operators.json` 作为本地静态数据源。
+- 页面加载时会完成数据标准化与结构校验。
+- 如果游戏内容后续更新，数据和相关规则需要同步维护。
 
-## 数据来源
-
-项目使用本地静态 JSON 作为唯一数据源：
-
-- [data/covenants.json](/D:/Project/js/arknights-weishu-tool/data/covenants.json)
-- [data/operators.json](/D:/Project/js/arknights-weishu-tool/data/operators.json)
-
-当前实现会在模块加载时完成一次标准化，并用 `Zod` 校验结构：
-
-- 盟约：`对象映射 -> CovenantEntity[]`
-- 干员：`对象映射 -> OperatorEntity[]`
-- 阶位、排序权重、搜索文本都会预计算
-
-当前数据规模：
-
-- 盟约 `23` 个
-- 干员 `115` 名
-- “主要盟约”固定取前 `8` 个，规则见 `normalizeCovenants.ts`
-
-## 当前业务规则
-
-### 盟约筛选
-
-- 支持多选
-- 未选择任何盟约时，不展示干员列表
-- 同一干员可同时属于多个盟约，因此可能出现在多个分组里
-
-### 搜索
-
-- 搜索范围是干员 `trait.description`
-- 支持空格分词，例如：`获得 层数`
-- 实际匹配逻辑为“所有关键词都命中”
-- 搜索会和盟约筛选、已删干员过滤一起生效
-
-### 排序
-
-默认排序规则：
-
-1. 描述同时包含“每”和“层数”
-2. 描述包含“层数”
-3. 描述包含“获得”
-4. 描述包含“与其相同”
-5. 其他
-
-同一优先级下继续按：
-
-1. 阶位降序
-2. 名称升序
-
-规则实现位置：
-
-- [src/entities/operator/model/operatorPriority.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operatorPriority.ts)
-- [src/entities/operator/model/queryOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/queryOperators.ts)
-
-### 卡片状态
-
-- 点击卡片：切换“已拿牌”
-- 点击“删”：从本局结果中移除该干员
-- 点击“恢复已删”：清空本局移除列表
-- 点击“清空本局”：重置所有筛选和状态
-
-状态存放在：
-
-- [src/features/strategy/model/useStrategyStore.ts](/D:/Project/js/arknights-weishu-tool/src/features/strategy/model/useStrategyStore.ts)
-
-## 维护时优先看哪里
-
-### 1. 改页面交互或布局
-
-优先查看：
-
-- [src/pages/strategy-board/StrategyBoardPage.tsx](/D:/Project/js/arknights-weishu-tool/src/pages/strategy-board/StrategyBoardPage.tsx)
-- [src/pages/strategy-board/StrategyBoardPage.module.css](/D:/Project/js/arknights-weishu-tool/src/pages/strategy-board/StrategyBoardPage.module.css)
-
-### 2. 改盟约分组、主次分类
-
-优先查看：
-
-- [src/entities/covenant/model/normalizeCovenants.ts](/D:/Project/js/arknights-weishu-tool/src/entities/covenant/model/normalizeCovenants.ts)
-
-注意：
-
-- `PRIMARY_COVENANT_COUNT = 8` 控制“主要盟约 / 次要盟约”划分
-- 当前划分基于源数据顺序，不是额外配置表
-
-### 3. 改排序、搜索、过滤规则
-
-优先查看：
-
-- [src/entities/operator/model/operatorPriority.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operatorPriority.ts)
-- [src/entities/operator/model/queryOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/queryOperators.ts)
-- [src/entities/operator/model/buildOperatorGroups.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/buildOperatorGroups.ts)
-- [src/shared/lib/normalizeSearchText.ts](/D:/Project/js/arknights-weishu-tool/src/shared/lib/normalizeSearchText.ts)
-- [src/shared/lib/searchKeywords.ts](/D:/Project/js/arknights-weishu-tool/src/shared/lib/searchKeywords.ts)
-- [src/shared/lib/highlightText.ts](/D:/Project/js/arknights-weishu-tool/src/shared/lib/highlightText.ts)
-
-### 4. 改数据结构或新增字段
-
-优先查看：
-
-- [src/entities/covenant/model/covenant.schema.ts](/D:/Project/js/arknights-weishu-tool/src/entities/covenant/model/covenant.schema.ts)
-- [src/entities/operator/model/operator.schema.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operator.schema.ts)
-- [src/shared/types/domain.ts](/D:/Project/js/arknights-weishu-tool/src/shared/types/domain.ts)
-
-如果 JSON 结构改了，通常要同时调整：
-
-- `schema`
-- `normalize`
-- 相关测试
-
-## 测试说明
-
-当前测试主要覆盖纯逻辑：
-
-- 排序优先级判断
-- 干员标准化统计
-- 搜索 / 分组 / 已删过滤
-- 描述高亮切分
-
-对应文件：
-
-- [tests/entities/operator/operatorPriority.test.ts](/D:/Project/js/arknights-weishu-tool/tests/entities/operator/operatorPriority.test.ts)
-- [tests/entities/operator/normalizeOperators.test.ts](/D:/Project/js/arknights-weishu-tool/tests/entities/operator/normalizeOperators.test.ts)
-- [tests/entities/operator/queryOperators.test.ts](/D:/Project/js/arknights-weishu-tool/tests/entities/operator/queryOperators.test.ts)
-- [tests/shared/highlightText.test.ts](/D:/Project/js/arknights-weishu-tool/tests/shared/highlightText.test.ts)
-
-新增业务规则时，建议先补测试，再动实现。
-
-## 开发约定
-
-- 文件读写统一使用 `UTF-8`
-- `@` 别名指向 `src/`
-- `dist/` 是构建输出目录，不要直接修改
-- 原始数据放在 `data/`，页面逻辑不要直接依赖未经标准化的原始字段
-
-## 后续可继续扩展的方向
-
-- 拆分页面内的大组件，细化到 `features/` 级别
-- 增加本局状态持久化
-- 增加 URL 分享或导入导出能力
-- 为核心交互补充组件级测试
-- 把“主要盟约”改成显式配置，而不是依赖源数据顺序
+</details>

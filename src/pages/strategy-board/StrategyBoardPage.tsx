@@ -809,7 +809,7 @@ export function StrategyBoardPage() {
                   >
                     <header className={styles.prioritySectionHeader}>
                       <div className={styles.prioritySectionHeading}>
-                        <h2 className={styles.prioritySectionTitle}>优先拿牌</h2>
+                        <h2 className={styles.prioritySectionTitle}>优先抓牌</h2>
                         <p className={styles.prioritySectionHint}>
                           先看持续叠加、单次叠加和特异化这三类核心特质
                         </p>
