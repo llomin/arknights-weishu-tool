@@ -380,20 +380,20 @@
 }
 
 .prioritySectionMultiHit {
-  border-color: rgba(86, 118, 146, 0.26);
+  border-color: rgba(129, 104, 168, 0.28);
   background: linear-gradient(
     180deg,
-    rgba(247, 250, 252, 0.96) 0%,
-    rgba(229, 238, 245, 0.86) 56%,
-    rgba(255, 255, 255, 0.8) 100%
+    rgba(251, 248, 255, 0.96) 0%,
+    rgba(236, 228, 247, 0.88) 56%,
+    rgba(255, 255, 255, 0.82) 100%
   );
 }
 
 .prioritySectionMultiHit::before {
   background:
-    radial-gradient(circle at top left, rgba(170, 193, 231, 0.38), transparent 30%),
-    radial-gradient(circle at 86% 18%, rgba(208, 228, 235, 0.28), transparent 22%),
-    linear-gradient(90deg, rgba(83, 118, 159, 0.1) 0%, transparent 26%);
+    radial-gradient(circle at top left, rgba(191, 166, 230, 0.4), transparent 30%),
+    radial-gradient(circle at 86% 18%, rgba(224, 205, 244, 0.3), transparent 22%),
+    linear-gradient(90deg, rgba(117, 88, 161, 0.1) 0%, transparent 26%);
 }
 
 .prioritySectionPrimary {
@@ -508,7 +508,7 @@
 
 .operatorCategoryRow {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-columns: 70px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
 }
@@ -517,6 +517,7 @@
   display: grid;
   gap: 6px;
   align-content: center;
+  justify-items: center;
 }
 
 .operatorCategoryLabel {
@@ -556,8 +557,8 @@
 }
 
 .operatorRowCards > .operatorCard {
-  flex: 0 0 min(208px, calc(100vw - 44px));
-  width: min(208px, calc(100vw - 44px));
+  flex: 0 0 min(178px, calc(100vw - 44px));
+  width: min(178px, calc(100vw - 44px));
 }
 
 .operatorCard {
@@ -566,7 +567,7 @@
   display: grid;
   grid-template-rows: 28px minmax(0, 1fr);
   width: 100%;
-  max-width: 208px;
+  max-width: 178px;
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--tier-border);
@@ -609,15 +610,24 @@
   display: flex;
   flex: 1 1 auto;
   align-items: center;
-  gap: 6px;
   height: 100%;
   min-width: 0;
 }
 
+.operatorNameGroup {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .operatorName {
   display: block;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   color: var(--tier-fg);
   font-size: 15px;
   font-weight: 700;
@@ -676,21 +686,36 @@
   height: 14px;
 }
 
-.operatorTier,
 .operatorTag {
   display: inline-flex;
   align-items: center;
+}
+
+.operatorTier {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--tier-fg);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.operatorTag {
   min-height: 22px;
   padding: 0 7px;
   border-radius: 999px;
   line-height: 1.25;
   font-size: 11px;
-}
-
-.operatorTier {
-  border: 1px solid var(--tier-border);
-  color: var(--tier-fg);
-  background: rgba(255, 255, 255, 0.88);
 }
 
 .operatorTag {
@@ -791,6 +816,8 @@
   line-height: 1.2;
   white-space: nowrap;
   animation: traitCategorySweep var(--trait-sheen-duration) linear infinite;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .traitCategoryContinuous {

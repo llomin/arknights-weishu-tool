@@ -45,6 +45,14 @@ const operatorCategoryOrder: OperatorEntity['priorityBucket'][] = [
   '作战能力',
   '其他',
 ];
+const operatorTierRomanMap: Record<OperatorEntity['tier'], string> = {
+  1: 'I',
+  2: 'II',
+  3: 'III',
+  4: 'IV',
+  5: 'V',
+  6: 'VI',
+};
 
 export function StrategyBoardPage() {
   const selectedCovenantIds = useStrategyStore(
@@ -219,10 +227,19 @@ export function StrategyBoardPage() {
       >
         <div className={styles.operatorTopRow}>
           <div className={styles.operatorIdentity}>
-            <span className={styles.operatorName}>{operator.name}</span>
+            <div className={styles.operatorNameGroup}>
+              <span className={styles.operatorName}>{operator.name}</span>
+              <span
+                className={styles.operatorTier}
+                aria-label={operator.tierLabel}
+                title={operator.tierLabel}
+              >
+                {operatorTierRomanMap[operator.tier]}
+              </span>
+            </div>
           </div>
 
-          <button
+          {/* <button
             className={styles.removeButton}
             type="button"
             aria-label={`移除 ${operator.name}`}
@@ -243,7 +260,7 @@ export function StrategyBoardPage() {
                 strokeLinejoin="round"
               />
             </svg>
-          </button>
+          </button> */}
         </div>
 
         <div className={styles.operatorDescription}>
