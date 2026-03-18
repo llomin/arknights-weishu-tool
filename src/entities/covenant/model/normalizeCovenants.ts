@@ -5,16 +5,35 @@ import { rawCovenantRecordSchema } from './covenant.schema';
 const parsedCovenants = rawCovenantRecordSchema.parse(rawCovenants);
 const PRIMARY_COVENANT_COUNT = 8;
 
+function extractActivationStages(activationCount: number, description: string) {
+  const stages = new Set<number>([activationCount]);
+
+  for (const match of description.matchAll(/<在场(\d+)名/g)) {
+    const stage = Number(match[1]);
+
+    if (Number.isFinite(stage) && stage > 0) {
+      stages.add(stage);
+    }
+  }
+
+  return [...stages].sort((left, right) => left - right);
+}
+
 export const covenants = Object.entries(parsedCovenants)
-  .map<CovenantEntity>(([name, value], index) => ({
-    id: name,
-    name,
-    activationCount: Number(value.activationCount),
-    description: value.description,
-    sortOrder: index,
-    isPrimary: index < PRIMARY_COVENANT_COUNT,
-    recommandWith: value.recommandWith,
-  }));
+  .map<CovenantEntity>(([name, value], index) => {
+    const activationCount = Number(value.activationCount);
+
+    return {
+      id: name,
+      name,
+      activationCount,
+      activationStages: extractActivationStages(activationCount, value.description),
+      description: value.description,
+      sortOrder: index,
+      isPrimary: index < PRIMARY_COVENANT_COUNT,
+      recommandWith: value.recommandWith,
+    };
+  });
 
 export const primaryCovenants = covenants.filter((covenant) => covenant.isPrimary);
 export const secondaryCovenants = covenants.filter(

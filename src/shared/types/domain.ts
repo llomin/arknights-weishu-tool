@@ -10,6 +10,7 @@ export interface CovenantEntity {
   id: string;
   name: string;
   activationCount: number;
+  activationStages: number[];
   description: string;
   sortOrder: number;
   isPrimary: boolean;
@@ -39,6 +40,8 @@ export interface OperatorGroupView {
 
 export interface StrategyState {
   selectedCovenantIds: string[];
+  selectedCovenantTargetMap: Record<string, number>;
+  maxPopulation: 8 | 9;
   currentLevel: OperatorEntity['tier'] | null;
   searchKeyword: string;
   pickedOperatorIds: string[];

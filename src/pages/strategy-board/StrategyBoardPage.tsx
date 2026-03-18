@@ -1,16 +1,22 @@
 import { startTransition, useDeferredValue } from 'react';
 import clsx from 'clsx';
 import {
+  covenantMap,
   primaryCovenants,
   secondaryCovenants,
 } from '@/entities/covenant/model/normalizeCovenants';
 import { buildOperatorGroups } from '@/entities/operator/model/buildOperatorGroups';
+import { buildRecommendedLineup } from '@/entities/operator/model/buildRecommendedLineup';
 import { operators } from '@/entities/operator/model/normalizeOperators';
 import { filterOperators } from '@/entities/operator/model/queryOperators';
 import { useStrategyStore } from '@/features/strategy/model/useStrategyStore';
 import { buildHighlightSegments } from '@/shared/lib/highlightText';
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
-import type { OperatorEntity, OperatorGroupView } from '@/shared/types/domain';
+import type {
+  OperatorEntity,
+  OperatorGroupView,
+  StrategyState,
+} from '@/shared/types/domain';
 import styles from './StrategyBoardPage.module.css';
 
 const tierClassNameMap = {
@@ -37,6 +43,7 @@ const highPriorityBuckets = new Set<OperatorEntity['priorityBucket']>([
   '特异化',
 ]);
 const selectableLevels = [1, 2, 3, 4, 5, 6] as const;
+const selectablePopulations: StrategyState['maxPopulation'][] = [8, 9];
 const operatorCategoryOrder: OperatorEntity['priorityBucket'][] = [
   '持续叠加',
   '单次叠加',
@@ -58,6 +65,10 @@ export function StrategyBoardPage() {
   const selectedCovenantIds = useStrategyStore(
     (state) => state.selectedCovenantIds,
   );
+  const selectedCovenantTargetMap = useStrategyStore(
+    (state) => state.selectedCovenantTargetMap,
+  );
+  const maxPopulation = useStrategyStore((state) => state.maxPopulation);
   const currentLevel = useStrategyStore((state) => state.currentLevel);
   const searchKeyword = useStrategyStore((state) => state.searchKeyword);
   const pickedOperatorIds = useStrategyStore((state) => state.pickedOperatorIds);
@@ -65,6 +76,7 @@ export function StrategyBoardPage() {
   const restoreRemovedOperators = useStrategyStore(
     (state) => state.restoreRemovedOperators,
   );
+  const setMaxPopulation = useStrategyStore((state) => state.setMaxPopulation);
   const toggleCovenant = useStrategyStore((state) => state.toggleCovenant);
   const toggleCurrentLevel = useStrategyStore((state) => state.toggleCurrentLevel);
   const toggleOperator = useStrategyStore((state) => state.toggleOperator);
@@ -93,6 +105,27 @@ export function StrategyBoardPage() {
   );
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
   const maxVisibleTier = currentLevel === null ? null : Math.min(currentLevel + 1, 6);
+  const selectedCovenantRequirements = selectedCovenantIds
+    .map((id) => {
+      const covenant = covenantMap[id];
+      const targetCount = selectedCovenantTargetMap[id];
+
+      if (!covenant || targetCount === undefined) {
+        return null;
+      }
+
+      return {
+        id,
+        name: covenant.name,
+        targetCount,
+      };
+    })
+    .filter((requirement): requirement is NonNullable<typeof requirement> => requirement !== null);
+  const recommendedLineup = buildRecommendedLineup(
+    visibleOperators,
+    selectedCovenantRequirements,
+    maxPopulation,
+  );
 
   const recommendedCovenantIds = new Set(
     selectedCovenantIds.flatMap((id) => {
@@ -108,9 +141,18 @@ export function StrategyBoardPage() {
     covenantName: string,
     covenantDescription: string,
     isPrimary: boolean,
+    activationStages: number[],
   ) {
     const isSelected = selectedCovenantIds.includes(covenantId);
     const isRecommended = recommendedCovenantIds.has(covenantId);
+    const selectableStages = activationStages.filter((stage) => stage <= maxPopulation);
+    const currentTargetCount =
+      selectedCovenantTargetMap[covenantId] ?? selectableStages[0];
+    const title = `${covenantDescription}\n${
+      isSelected
+        ? `当前按 ${currentTargetCount} 人阶段计算，继续点击切换到下一阶段，最后一次点击取消。`
+        : `点击后按 ${currentTargetCount} 人阶段计算。`
+    }`;
 
     return (
       <button
@@ -123,10 +165,13 @@ export function StrategyBoardPage() {
           !isSelected && isRecommended && styles.covenantChipRecommended,
         )}
         aria-pressed={isSelected}
-        title={covenantDescription}
-        onClick={() => toggleCovenant(covenantId)}
+        title={title}
+        onClick={() => toggleCovenant(covenantId, selectableStages)}
       >
-        {covenantName}
+        <span className={styles.covenantChipContent}>{covenantName}</span>
+        {isSelected ? (
+          <span className={styles.covenantChipStage}>{currentTargetCount}人</span>
+        ) : null}
       </button>
     );
   }
@@ -147,6 +192,26 @@ export function StrategyBoardPage() {
         onClick={() => toggleCurrentLevel(level)}
       >
         {level} 级
+      </button>
+    );
+  }
+
+  function renderPopulationChip(population: StrategyState['maxPopulation']) {
+    const isSelected = maxPopulation === population;
+
+    return (
+      <button
+        key={`population-${population}`}
+        type="button"
+        className={clsx(
+          styles.covenantChip,
+          styles.levelChip,
+          isSelected && styles.levelChipSelected,
+        )}
+        aria-pressed={isSelected}
+        onClick={() => setMaxPopulation(population)}
+      >
+        {population} 人
       </button>
     );
   }
@@ -191,10 +256,13 @@ export function StrategyBoardPage() {
       .filter((row) => row.operators.length > 0);
   }
 
-  function renderOperatorCard(covenantId: string, operator: OperatorEntity) {
+  function renderOperatorCard(
+    covenantId: string,
+    operator: OperatorEntity,
+    extraClassName?: string,
+  ) {
     const isPicked = pickedOperatorIdSet.has(operator.id);
     const matchedSelectedCovenants = getMatchedSelectedCovenants(operator);
-    const traitCategoryClassName = traitCategoryClassNameMap[operator.priorityBucket];
     const traitTagSet = new Set(
       operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
     );
@@ -213,6 +281,7 @@ export function StrategyBoardPage() {
         className={clsx(
           styles.operatorCard,
           tierClassNameMap[operator.tier],
+          extraClassName,
           isPicked && styles.operatorCardPicked,
         )}
         role="button"
@@ -348,6 +417,78 @@ export function StrategyBoardPage() {
     );
   }
 
+  function renderRecommendationSection() {
+    if (selectedCovenantIds.length === 0) {
+      return null;
+    }
+
+    const isImpossible = recommendedLineup.reason !== null;
+    const sortedRecommendedOperators = [...recommendedLineup.operators].sort(
+      (left, right) =>
+        right.tier - left.tier ||
+        left.priorityWeight - right.priorityWeight ||
+        left.name.localeCompare(right.name, 'zh-Hans-CN'),
+    );
+
+    return (
+      <section
+        className={clsx(
+          styles.recommendationSection,
+          isImpossible && styles.recommendationSectionImpossible,
+        )}
+      >
+        <header className={styles.recommendationHeader}>
+          <div className={styles.prioritySectionHeading}>
+            <h2 className={styles.prioritySectionTitle}>推荐阵容</h2>
+            <p className={styles.prioritySectionHint}>
+              根据已选盟约阶段和最大人口自动搜索；有盈余位置会留空。
+            </p>
+          </div>
+
+          <div className={styles.groupMeta}>
+            <span className={styles.groupMetaItem}>
+              已用 {recommendedLineup.operators.length} / {maxPopulation} 人
+            </span>
+            <span className={styles.groupMetaItem}>
+              空位 {recommendedLineup.emptySlotCount} 个
+            </span>
+          </div>
+        </header>
+
+        <div className={styles.recommendationRequirementRow}>
+          {recommendedLineup.requirements.map((requirement) => (
+            <span
+              className={styles.recommendationRequirementChip}
+              key={`requirement-${requirement.id}`}
+            >
+              {requirement.name} {recommendedLineup.matchedCounts[requirement.id] ?? 0}/
+              {requirement.targetCount}
+            </span>
+          ))}
+        </div>
+
+        {recommendedLineup.reason ? (
+          <p className={styles.recommendationWarning}>{recommendedLineup.reason}</p>
+        ) : null}
+
+        <div className={styles.recommendationLineupGrid}>
+          {sortedRecommendedOperators.map((operator) =>
+            renderOperatorCard('recommended', operator, styles.recommendationCard),
+          )}
+          {Array.from({ length: recommendedLineup.emptySlotCount }, (_, index) => (
+            <div
+              className={styles.recommendationPlaceholder}
+              key={`recommended-empty-${index}`}
+            >
+              <span className={styles.recommendationPlaceholderMark}>~</span>
+              <span className={styles.recommendationPlaceholderText}>空位</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -388,7 +529,7 @@ export function StrategyBoardPage() {
           <div className={styles.filterGroup}>
             <div className={styles.filterLabelRow}>
               <span className={styles.filterLabel}>主要盟约</span>
-              <span className={styles.filterHint}>更常用，优先关注</span>
+              <span className={styles.filterHint}>点击后继续点会切换到更高人口阶段</span>
             </div>
             <div className={styles.chipRow}>
               {primaryCovenants.map((covenant) =>
@@ -397,6 +538,7 @@ export function StrategyBoardPage() {
                   covenant.name,
                   covenant.description,
                   true,
+                  covenant.activationStages,
                 ),
               )}
             </div>
@@ -405,7 +547,7 @@ export function StrategyBoardPage() {
           <div className={styles.filterGroup}>
             <div className={styles.filterLabelRow}>
               <span className={styles.filterLabel}>次要盟约</span>
-              <span className={styles.filterHint}>按需补充路线</span>
+              <span className={styles.filterHint}>同样支持按人口阶段循环切换</span>
             </div>
             <div className={styles.chipRow}>
               {secondaryCovenants.map((covenant) =>
@@ -414,7 +556,22 @@ export function StrategyBoardPage() {
                   covenant.name,
                   covenant.description,
                   false,
+                  covenant.activationStages,
                 ),
+              )}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <div className={styles.filterLabelRow}>
+              <span className={styles.filterLabel}>最大人口</span>
+              <span className={styles.filterHint}>
+                只影响推荐阵容搜索上限，富余位置会保留空白
+              </span>
+            </div>
+            <div className={styles.chipRow}>
+              {selectablePopulations.map((population) =>
+                renderPopulationChip(population),
               )}
             </div>
           </div>
@@ -449,6 +606,8 @@ export function StrategyBoardPage() {
           </button>
         </div>
       </section>
+
+      {renderRecommendationSection()}
 
       {selectedCovenantIds.length === 0 ? (
         <section className={styles.emptyState}>

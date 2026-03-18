@@ -1,11 +1,13 @@
 import { create } from 'zustand';
+import { covenantMap } from '@/entities/covenant/model/normalizeCovenants';
 import type { StrategyState } from '@/shared/types/domain';
 
 interface StrategyStore extends StrategyState {
   reset: () => void;
   restoreRemovedOperators: () => void;
+  setMaxPopulation: (population: StrategyState['maxPopulation']) => void;
   setSearchKeyword: (keyword: string) => void;
-  toggleCovenant: (covenantId: string) => void;
+  toggleCovenant: (covenantId: string, activationStages: number[]) => void;
   toggleCurrentLevel: (level: NonNullable<StrategyState['currentLevel']>) => void;
   toggleFavoriteOperator: (operatorId: string) => void;
   toggleOperator: (operatorId: string) => void;
@@ -55,6 +57,8 @@ function saveFavoriteOperatorIds(favoriteOperatorIds: string[]) {
 
 const initialState: StrategyState = {
   selectedCovenantIds: [],
+  selectedCovenantTargetMap: {},
+  maxPopulation: 8,
   currentLevel: null,
   searchKeyword: '',
   pickedOperatorIds: [],
@@ -67,6 +71,8 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
   reset: () =>
     set((state) => ({
       selectedCovenantIds: [],
+      selectedCovenantTargetMap: {},
+      maxPopulation: 8,
       currentLevel: null,
       searchKeyword: '',
       pickedOperatorIds: [],
@@ -82,12 +88,84 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
     set(() => ({
       searchKeyword: keyword,
     })),
-  toggleCovenant: (covenantId) =>
-    set((state) => ({
-      selectedCovenantIds: state.selectedCovenantIds.includes(covenantId)
-        ? state.selectedCovenantIds.filter((item) => item !== covenantId)
-        : [...state.selectedCovenantIds, covenantId],
-    })),
+  setMaxPopulation: (population) =>
+    set((state) => {
+      const nextSelectedCovenantTargetMap = { ...state.selectedCovenantTargetMap };
+
+      for (const covenantId of state.selectedCovenantIds) {
+        const covenant = covenantMap[covenantId];
+        const availableStages =
+          covenant?.activationStages.filter((stage) => stage <= population) ?? [];
+
+        if (availableStages.length === 0) {
+          delete nextSelectedCovenantTargetMap[covenantId];
+          continue;
+        }
+
+        const firstAvailableStage = availableStages[0];
+        const lastAvailableStage = availableStages[availableStages.length - 1];
+
+        if (firstAvailableStage === undefined || lastAvailableStage === undefined) {
+          continue;
+        }
+
+        const currentTargetCount =
+          nextSelectedCovenantTargetMap[covenantId] ?? firstAvailableStage;
+        const clampedTargetCount = availableStages.includes(currentTargetCount)
+          ? currentTargetCount
+          : lastAvailableStage;
+
+        nextSelectedCovenantTargetMap[covenantId] = clampedTargetCount;
+      }
+
+      return {
+        maxPopulation: population,
+        selectedCovenantTargetMap: nextSelectedCovenantTargetMap,
+      };
+    }),
+  toggleCovenant: (covenantId, activationStages) =>
+    set((state) => {
+      const firstStage = activationStages[0];
+      const isSelected = state.selectedCovenantIds.includes(covenantId);
+      const currentTargetCount = state.selectedCovenantTargetMap[covenantId];
+
+      if (firstStage === undefined) {
+        return state;
+      }
+
+      if (!isSelected) {
+        return {
+          selectedCovenantIds: [...state.selectedCovenantIds, covenantId],
+          selectedCovenantTargetMap: {
+            ...state.selectedCovenantTargetMap,
+            [covenantId]: firstStage,
+          },
+        };
+      }
+
+      const currentStageIndex = activationStages.findIndex(
+        (stage) => stage === currentTargetCount,
+      );
+      const nextTargetCount = activationStages[currentStageIndex + 1];
+
+      if (nextTargetCount !== undefined) {
+        return {
+          selectedCovenantIds: state.selectedCovenantIds,
+          selectedCovenantTargetMap: {
+            ...state.selectedCovenantTargetMap,
+            [covenantId]: nextTargetCount,
+          },
+        };
+      }
+
+      const nextSelectedCovenantTargetMap = { ...state.selectedCovenantTargetMap };
+      delete nextSelectedCovenantTargetMap[covenantId];
+
+      return {
+        selectedCovenantIds: state.selectedCovenantIds.filter((item) => item !== covenantId),
+        selectedCovenantTargetMap: nextSelectedCovenantTargetMap,
+      };
+    }),
   toggleCurrentLevel: (level) =>
     set((state) => ({
       currentLevel: state.currentLevel === level ? null : level,
