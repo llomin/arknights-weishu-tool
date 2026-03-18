@@ -239,7 +239,7 @@ export function StrategyBoardPage() {
             </div>
           </div>
 
-          {/* <button
+          <button
             className={styles.removeButton}
             type="button"
             aria-label={`移除 ${operator.name}`}
@@ -260,7 +260,7 @@ export function StrategyBoardPage() {
                 strokeLinejoin="round"
               />
             </svg>
-          </button> */}
+          </button>
         </div>
 
         <div className={styles.operatorDescription}>
