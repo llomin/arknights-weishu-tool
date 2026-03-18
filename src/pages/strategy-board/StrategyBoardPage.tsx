@@ -7,7 +7,7 @@ import {
 } from '@/entities/covenant/model/normalizeCovenants';
 import { buildOperatorGroups } from '@/entities/operator/model/buildOperatorGroups';
 import { buildRecommendedLineup } from '@/entities/operator/model/buildRecommendedLineup';
-import { operators } from '@/entities/operator/model/normalizeOperators';
+import { operatorMap, operators } from '@/entities/operator/model/normalizeOperators';
 import {
   filterOperators,
   matchesOperatorLevel,
@@ -116,6 +116,15 @@ export function StrategyBoardPage() {
         .filter((operator) => matchesOperatorLevel(operator, currentLevel))
         .filter((operator) => matchesOperatorSearch(operator, searchKeywords))
         .sort(sortOperators);
+  const removedOperators = removedOperatorIds
+    .map((operatorId) => operatorMap[operatorId])
+    .filter((operator): operator is OperatorEntity => Boolean(operator))
+    .sort(
+      (left, right) =>
+        right.tier - left.tier ||
+        left.priorityWeight - right.priorityWeight ||
+        left.name.localeCompare(right.name, 'zh-Hans-CN'),
+    );
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
   const maxVisibleTier = currentLevel === null ? null : Math.min(currentLevel + 1, 6);
   const selectedCovenantRequirements = selectedCovenantIds
@@ -494,10 +503,12 @@ export function StrategyBoardPage() {
   }
 
   function renderRecommendationSection() {
-    if (selectedCovenantIds.length === 0) {
+    if (selectedCovenantIds.length === 0 && removedOperators.length === 0) {
       return null;
     }
 
+    const hasRequirements = selectedCovenantRequirements.length > 0;
+    const hasRemovedPanel = removedOperators.length > 0;
     const isImpossible = recommendedLineup.reason !== null;
     const sortedRecommendedOperators = [...recommendedLineup.operators].sort(
       (left, right) =>
@@ -510,57 +521,116 @@ export function StrategyBoardPage() {
       <section
         className={clsx(
           styles.recommendationSection,
+          hasRemovedPanel && styles.recommendationSectionWithRemovedPanel,
           isImpossible && styles.recommendationSectionImpossible,
         )}
       >
-        <header className={styles.recommendationHeader}>
-          <div className={styles.prioritySectionHeading}>
-            <h2 className={styles.prioritySectionTitle}>推荐阵容</h2>
-            <p className={styles.prioritySectionHint}>
-              根据已选盟约阶段和最大人口自动搜索；有盈余位置会留空。
-            </p>
-          </div>
-
-          <div className={styles.groupMeta}>
-            <span className={styles.groupMetaItem}>
-              已用 {recommendedLineup.operators.length} / {maxPopulation} 人
-            </span>
-            <span className={styles.groupMetaItem}>
-              空位 {recommendedLineup.emptySlotCount} 个
-            </span>
-          </div>
-        </header>
-
-        <div className={styles.recommendationRequirementRow}>
-          {recommendedLineup.requirements.map((requirement) => (
-            <span
-              className={styles.recommendationRequirementChip}
-              key={`requirement-${requirement.id}`}
-            >
-              {requirement.name} {recommendedLineup.matchedCounts[requirement.id] ?? 0}/
-              {requirement.targetCount}
-            </span>
-          ))}
-        </div>
-
-        {recommendedLineup.reason ? (
-          <p className={styles.recommendationWarning}>{recommendedLineup.reason}</p>
-        ) : null}
-
-        <div className={styles.recommendationLineupGrid}>
-          {sortedRecommendedOperators.map((operator) =>
-            renderOperatorCard('recommended', operator),
-          )}
-          {Array.from({ length: recommendedLineup.emptySlotCount }, (_, index) => (
-            <div
-              className={styles.recommendationPlaceholder}
-              key={`recommended-empty-${index}`}
-            >
-              <span className={styles.recommendationPlaceholderMark}>~</span>
-              <span className={styles.recommendationPlaceholderText}>空位</span>
+        <div className={styles.recommendationMain}>
+          <header className={styles.recommendationHeader}>
+            <div className={styles.prioritySectionHeading}>
+              <h2 className={styles.prioritySectionTitle}>推荐阵容</h2>
+              <p className={styles.prioritySectionHint}>
+                {hasRequirements
+                  ? '根据已选盟约阶段和最大人口自动搜索；有盈余位置会留空。'
+                  : '先选择盟约阶段，再生成推荐阵容。'}
+              </p>
             </div>
-          ))}
+
+            {hasRequirements ? (
+              <div className={styles.groupMeta}>
+                <span className={styles.groupMetaItem}>
+                  已用 {recommendedLineup.operators.length} / {maxPopulation} 人
+                </span>
+                <span className={styles.groupMetaItem}>
+                  空位 {recommendedLineup.emptySlotCount} 个
+                </span>
+              </div>
+            ) : null}
+          </header>
+
+          {hasRequirements ? (
+            <>
+              <div className={styles.recommendationRequirementRow}>
+                {recommendedLineup.requirements.map((requirement) => (
+                  <span
+                    className={styles.recommendationRequirementChip}
+                    key={`requirement-${requirement.id}`}
+                  >
+                    {requirement.name} {recommendedLineup.matchedCounts[requirement.id] ?? 0}/
+                    {requirement.targetCount}
+                  </span>
+                ))}
+              </div>
+
+              {recommendedLineup.reason ? (
+                <p className={styles.recommendationWarning}>{recommendedLineup.reason}</p>
+              ) : null}
+
+              <div className={styles.recommendationLineupGrid}>
+                {sortedRecommendedOperators.map((operator) =>
+                  renderOperatorCard('recommended', operator),
+                )}
+                {Array.from({ length: recommendedLineup.emptySlotCount }, (_, index) => (
+                  <div
+                    className={styles.recommendationPlaceholder}
+                    key={`recommended-empty-${index}`}
+                  >
+                    <span className={styles.recommendationPlaceholderMark}>~</span>
+                    <span className={styles.recommendationPlaceholderText}>空位</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className={styles.recommendationIdle}>
+              还没有可计算的盟约阶段，先在上方点选盟约。
+            </div>
+          )}
         </div>
+
+        {hasRemovedPanel ? (
+          <aside className={styles.removedOperatorPanel}>
+            <div className={styles.removedOperatorHeader}>
+              <div className={styles.removedOperatorTitleGroup}>
+                <h3 className={styles.removedOperatorTitle}>已删干员</h3>
+                <span className={styles.removedOperatorCount}>
+                  {removedOperators.length} 名
+                </span>
+              </div>
+              <button
+                className={styles.removedRestoreAllButton}
+                type="button"
+                onClick={() => restoreRemovedOperators()}
+              >
+                全部恢复
+              </button>
+            </div>
+
+            <div className={styles.removedOperatorList}>
+              {removedOperators.map((operator) => (
+                <button
+                  className={styles.removedOperatorButton}
+                  key={`removed-${operator.id}`}
+                  type="button"
+                  title={`恢复 ${operator.name}`}
+                  onClick={() => toggleRemovedOperator(operator.id)}
+                >
+                  <span className={styles.removedOperatorName}>{operator.name}</span>
+                  <span
+                    className={clsx(
+                      styles.operatorTier,
+                      styles.removedOperatorTier,
+                      tierClassNameMap[operator.tier],
+                    )}
+                    aria-label={operator.tierLabel}
+                  >
+                    {operatorTierRomanMap[operator.tier]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </aside>
+        ) : null}
       </section>
     );
   }
@@ -670,15 +740,6 @@ export function StrategyBoardPage() {
         </div>
 
         <div className={styles.filterActions}>
-          {removedOperatorIds.length > 0 ? (
-            <button
-              className={styles.ghostButton}
-              type="button"
-              onClick={() => restoreRemovedOperators()}
-            >
-              恢复已删
-            </button>
-          ) : null}
           <button className={styles.resetButton} type="button" onClick={() => reset()}>
             重置
           </button>

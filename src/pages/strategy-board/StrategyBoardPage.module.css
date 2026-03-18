@@ -386,6 +386,10 @@
   animation: recommendationBorderShift 6s linear infinite;
 }
 
+.recommendationSectionWithRemovedPanel {
+  padding-right: 16px;
+}
+
 .recommendationSection::before {
   content: '';
   position: absolute;
@@ -434,6 +438,12 @@
   gap: 12px;
 }
 
+.recommendationMain {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
 .recommendationRequirementRow {
   display: flex;
   flex-wrap: wrap;
@@ -458,6 +468,20 @@
   color: #9a4d58;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.recommendationIdle {
+  display: grid;
+  place-items: center;
+  min-height: 116px;
+  padding: 18px;
+  border: 1px dashed rgba(78, 125, 95, 0.24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .recommendationLineupGrid {
@@ -503,6 +527,132 @@
   letter-spacing: 0.08em;
   line-height: 1.2;
   text-align: center;
+}
+
+.removedOperatorPanel {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+  width: 226px;
+  max-height: calc(100% - 32px);
+  padding: 12px;
+  border: 1px solid rgba(94, 121, 162, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 28px rgba(61, 88, 122, 0.12);
+  transform: translateY(-50%);
+}
+
+.removedOperatorHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.removedOperatorTitleGroup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.removedOperatorTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.removedOperatorCount {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.removedRestoreAllButton {
+  display: inline-flex;
+  width: 100%;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid rgba(94, 121, 162, 0.18);
+  border-radius: 10px;
+  background: rgba(243, 247, 252, 0.92);
+  color: #45607e;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.removedRestoreAllButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(94, 121, 162, 0.32);
+  background: rgba(237, 244, 252, 1);
+  color: #314a66;
+}
+
+.removedOperatorList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.removedOperatorButton {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: auto;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(88, 104, 134, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.removedOperatorButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(94, 121, 162, 0.28);
+  background: rgba(248, 251, 255, 0.98);
+  box-shadow: 0 10px 18px rgba(61, 88, 122, 0.08);
+}
+
+.removedOperatorName {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.removedOperatorTier {
+  min-width: 24px;
 }
 
 .groupStack {
@@ -1179,6 +1329,20 @@
   }
 }
 
+@media (max-width: 1280px) {
+  .recommendationSectionWithRemovedPanel {
+    padding-right: 16px;
+  }
+
+  .removedOperatorPanel {
+    position: static;
+    width: auto;
+    max-height: none;
+    margin-top: 2px;
+    transform: none;
+  }
+}
+
 @media (max-width: 980px) {
   .header {
     grid-template-columns: 1fr;
@@ -1199,6 +1363,17 @@
   .covenantClusterHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .recommendationSectionWithRemovedPanel {
+    padding-right: 16px;
+  }
+
+  .removedOperatorPanel {
+    position: static;
+    width: auto;
+    max-height: none;
+    margin-top: 2px;
   }
 }
 
@@ -1231,6 +1406,10 @@
 
   .recommendationSection {
     padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .recommendationSectionWithRemovedPanel {
     padding-right: 12px;
   }
 
