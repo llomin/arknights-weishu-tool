@@ -737,12 +737,14 @@ export function StrategyBoardPage() {
               {selectableLevels.map((level) => renderLevelChip(level))}
             </div>
           </div>
-        </div>
 
-        <div className={styles.filterActions}>
-          <button className={styles.resetButton} type="button" onClick={() => reset()}>
-            重置
-          </button>
+          {selectedCovenantIds.length > 0 ? (
+            <div className={styles.filterActions}>
+              <button className={styles.resetButton} type="button" onClick={() => reset()}>
+                再来一把
+              </button>
+            </div>
+          ) : null}
         </div>
       </section>
 
