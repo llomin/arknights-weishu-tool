@@ -7,9 +7,6 @@
     <a href="https://arknights-weishu-tool.vercel.app/"><strong>在线体验</strong></a>
   </p>
   <p>
-    <a href="https://arknights-weishu-tool.vercel.app/">
-      <img alt="在线体验" src="https://img.shields.io/badge/在线体验-Vercel-000000?logo=vercel&logoColor=white" />
-    </a>
     <img alt="React 19" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
     <img alt="TypeScript 5" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
     <img alt="Vite 7" src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" />
@@ -18,7 +15,7 @@
 
 ## 在线体验
 
-如果你只是想直接查牌、筛盟约、看推荐阵容，可以直接访问在线版本体验效果：
+如果你只是想直接查牌、筛盟约、看推荐阵容，可以直接访问下述链接体验效果：
 
 - https://arknights-weishu-tool.vercel.app/
 
