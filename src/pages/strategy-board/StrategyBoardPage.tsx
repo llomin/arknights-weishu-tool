@@ -705,7 +705,7 @@ export function StrategyBoardPage() {
 
             return (
               <>
-                {multiHitOperators.length > 0 ? (
+                {/* {multiHitOperators.length > 0 ? (
                   <section
                     className={clsx(
                       styles.prioritySection,
@@ -728,7 +728,7 @@ export function StrategyBoardPage() {
 
                     {renderOperatorGrid('multi-hit', multiHitOperators)}
                   </section>
-                ) : null}
+                ) : null} */}
 
                 {priorityGroups.length > 0 ? (
                   <section
