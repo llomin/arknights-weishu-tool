@@ -276,7 +276,11 @@ export function StrategyBoardPage() {
     searchHighlightKeywords: string[] = [],
   ) {
     const isPicked = pickedOperatorIdSet.has(operator.id);
+    const isRecommendedCard = covenantId === 'recommended';
     const matchedSelectedCovenants = getMatchedSelectedCovenants(operator);
+    const visibleCovenants = isRecommendedCard
+      ? operator.covenants
+      : matchedSelectedCovenants;
     const traitTagSet = new Set(
       operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
     );
@@ -347,10 +351,13 @@ export function StrategyBoardPage() {
         </div>
 
         <div className={styles.operatorDescription}>
-          {matchedSelectedCovenants.length >= 2 ? (
+          {(isRecommendedCard || matchedSelectedCovenants.length >= 2) &&
+          visibleCovenants.length > 0 ? (
             <div className={styles.matchedCovenants}>
-              <span className={styles.matchedCovenantsLabel}>命中盟约</span>
-              {matchedSelectedCovenants.map((covenantId) => (
+              {!isRecommendedCard ? (
+                <span className={styles.matchedCovenantsLabel}>命中盟约</span>
+              ) : null}
+              {visibleCovenants.map((covenantId) => (
                 <span
                   className={styles.matchedCovenantChip}
                   key={`${operator.id}-${covenantId}`}
