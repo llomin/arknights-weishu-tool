@@ -69,22 +69,22 @@ npm run dev
 
 ## 关键入口
 
-- 页面入口：[src/app/App.tsx](/D:/Project/js/llomin-weishu-tool/src/app/App.tsx)
-- 主页面：[src/pages/strategy-board/StrategyBoardPage.tsx](/D:/Project/js/llomin-weishu-tool/src/pages/strategy-board/StrategyBoardPage.tsx)
-- 状态管理：[src/features/strategy/model/useStrategyStore.ts](/D:/Project/js/llomin-weishu-tool/src/features/strategy/model/useStrategyStore.ts)
-- 盟约标准化：[src/entities/covenant/model/normalizeCovenants.ts](/D:/Project/js/llomin-weishu-tool/src/entities/covenant/model/normalizeCovenants.ts)
-- 干员标准化：[src/entities/operator/model/normalizeOperators.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/normalizeOperators.ts)
-- 筛选与排序：[src/entities/operator/model/queryOperators.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/queryOperators.ts)
-- 分组逻辑：[src/entities/operator/model/buildOperatorGroups.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/buildOperatorGroups.ts)
-- 排序优先级规则：[src/entities/operator/model/operatorPriority.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/operatorPriority.ts)
-- 初始设计文档：[docs/项目初始化设计.md](/D:/Project/js/llomin-weishu-tool/docs/项目初始化设计.md)
+- 页面入口：[src/app/App.tsx](/D:/Project/js/arknights-weishu-tool/src/app/App.tsx)
+- 主页面：[src/pages/strategy-board/StrategyBoardPage.tsx](/D:/Project/js/arknights-weishu-tool/src/pages/strategy-board/StrategyBoardPage.tsx)
+- 状态管理：[src/features/strategy/model/useStrategyStore.ts](/D:/Project/js/arknights-weishu-tool/src/features/strategy/model/useStrategyStore.ts)
+- 盟约标准化：[src/entities/covenant/model/normalizeCovenants.ts](/D:/Project/js/arknights-weishu-tool/src/entities/covenant/model/normalizeCovenants.ts)
+- 干员标准化：[src/entities/operator/model/normalizeOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/normalizeOperators.ts)
+- 筛选与排序：[src/entities/operator/model/queryOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/queryOperators.ts)
+- 分组逻辑：[src/entities/operator/model/buildOperatorGroups.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/buildOperatorGroups.ts)
+- 排序优先级规则：[src/entities/operator/model/operatorPriority.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operatorPriority.ts)
+- 初始设计文档：[docs/项目初始化设计.md](/D:/Project/js/arknights-weishu-tool/docs/项目初始化设计.md)
 
 ## 数据来源
 
 项目使用本地静态 JSON 作为唯一数据源：
 
-- [data/covenants.json](/D:/Project/js/llomin-weishu-tool/data/covenants.json)
-- [data/operators.json](/D:/Project/js/llomin-weishu-tool/data/operators.json)
+- [data/covenants.json](/D:/Project/js/arknights-weishu-tool/data/covenants.json)
+- [data/operators.json](/D:/Project/js/arknights-weishu-tool/data/operators.json)
 
 当前实现会在模块加载时完成一次标准化，并用 `Zod` 校验结构：
 
@@ -130,8 +130,8 @@ npm run dev
 
 规则实现位置：
 
-- [src/entities/operator/model/operatorPriority.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/operatorPriority.ts)
-- [src/entities/operator/model/queryOperators.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/queryOperators.ts)
+- [src/entities/operator/model/operatorPriority.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operatorPriority.ts)
+- [src/entities/operator/model/queryOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/queryOperators.ts)
 
 ### 卡片状态
 
@@ -142,7 +142,7 @@ npm run dev
 
 状态存放在：
 
-- [src/features/strategy/model/useStrategyStore.ts](/D:/Project/js/llomin-weishu-tool/src/features/strategy/model/useStrategyStore.ts)
+- [src/features/strategy/model/useStrategyStore.ts](/D:/Project/js/arknights-weishu-tool/src/features/strategy/model/useStrategyStore.ts)
 
 ## 维护时优先看哪里
 
@@ -150,14 +150,14 @@ npm run dev
 
 优先查看：
 
-- [src/pages/strategy-board/StrategyBoardPage.tsx](/D:/Project/js/llomin-weishu-tool/src/pages/strategy-board/StrategyBoardPage.tsx)
-- [src/pages/strategy-board/StrategyBoardPage.module.css](/D:/Project/js/llomin-weishu-tool/src/pages/strategy-board/StrategyBoardPage.module.css)
+- [src/pages/strategy-board/StrategyBoardPage.tsx](/D:/Project/js/arknights-weishu-tool/src/pages/strategy-board/StrategyBoardPage.tsx)
+- [src/pages/strategy-board/StrategyBoardPage.module.css](/D:/Project/js/arknights-weishu-tool/src/pages/strategy-board/StrategyBoardPage.module.css)
 
 ### 2. 改盟约分组、主次分类
 
 优先查看：
 
-- [src/entities/covenant/model/normalizeCovenants.ts](/D:/Project/js/llomin-weishu-tool/src/entities/covenant/model/normalizeCovenants.ts)
+- [src/entities/covenant/model/normalizeCovenants.ts](/D:/Project/js/arknights-weishu-tool/src/entities/covenant/model/normalizeCovenants.ts)
 
 注意：
 
@@ -168,20 +168,20 @@ npm run dev
 
 优先查看：
 
-- [src/entities/operator/model/operatorPriority.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/operatorPriority.ts)
-- [src/entities/operator/model/queryOperators.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/queryOperators.ts)
-- [src/entities/operator/model/buildOperatorGroups.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/buildOperatorGroups.ts)
-- [src/shared/lib/normalizeSearchText.ts](/D:/Project/js/llomin-weishu-tool/src/shared/lib/normalizeSearchText.ts)
-- [src/shared/lib/searchKeywords.ts](/D:/Project/js/llomin-weishu-tool/src/shared/lib/searchKeywords.ts)
-- [src/shared/lib/highlightText.ts](/D:/Project/js/llomin-weishu-tool/src/shared/lib/highlightText.ts)
+- [src/entities/operator/model/operatorPriority.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operatorPriority.ts)
+- [src/entities/operator/model/queryOperators.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/queryOperators.ts)
+- [src/entities/operator/model/buildOperatorGroups.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/buildOperatorGroups.ts)
+- [src/shared/lib/normalizeSearchText.ts](/D:/Project/js/arknights-weishu-tool/src/shared/lib/normalizeSearchText.ts)
+- [src/shared/lib/searchKeywords.ts](/D:/Project/js/arknights-weishu-tool/src/shared/lib/searchKeywords.ts)
+- [src/shared/lib/highlightText.ts](/D:/Project/js/arknights-weishu-tool/src/shared/lib/highlightText.ts)
 
 ### 4. 改数据结构或新增字段
 
 优先查看：
 
-- [src/entities/covenant/model/covenant.schema.ts](/D:/Project/js/llomin-weishu-tool/src/entities/covenant/model/covenant.schema.ts)
-- [src/entities/operator/model/operator.schema.ts](/D:/Project/js/llomin-weishu-tool/src/entities/operator/model/operator.schema.ts)
-- [src/shared/types/domain.ts](/D:/Project/js/llomin-weishu-tool/src/shared/types/domain.ts)
+- [src/entities/covenant/model/covenant.schema.ts](/D:/Project/js/arknights-weishu-tool/src/entities/covenant/model/covenant.schema.ts)
+- [src/entities/operator/model/operator.schema.ts](/D:/Project/js/arknights-weishu-tool/src/entities/operator/model/operator.schema.ts)
+- [src/shared/types/domain.ts](/D:/Project/js/arknights-weishu-tool/src/shared/types/domain.ts)
 
 如果 JSON 结构改了，通常要同时调整：
 
@@ -200,10 +200,10 @@ npm run dev
 
 对应文件：
 
-- [tests/entities/operator/operatorPriority.test.ts](/D:/Project/js/llomin-weishu-tool/tests/entities/operator/operatorPriority.test.ts)
-- [tests/entities/operator/normalizeOperators.test.ts](/D:/Project/js/llomin-weishu-tool/tests/entities/operator/normalizeOperators.test.ts)
-- [tests/entities/operator/queryOperators.test.ts](/D:/Project/js/llomin-weishu-tool/tests/entities/operator/queryOperators.test.ts)
-- [tests/shared/highlightText.test.ts](/D:/Project/js/llomin-weishu-tool/tests/shared/highlightText.test.ts)
+- [tests/entities/operator/operatorPriority.test.ts](/D:/Project/js/arknights-weishu-tool/tests/entities/operator/operatorPriority.test.ts)
+- [tests/entities/operator/normalizeOperators.test.ts](/D:/Project/js/arknights-weishu-tool/tests/entities/operator/normalizeOperators.test.ts)
+- [tests/entities/operator/queryOperators.test.ts](/D:/Project/js/arknights-weishu-tool/tests/entities/operator/queryOperators.test.ts)
+- [tests/shared/highlightText.test.ts](/D:/Project/js/arknights-weishu-tool/tests/shared/highlightText.test.ts)
 
 新增业务规则时，建议先补测试，再动实现。
 
