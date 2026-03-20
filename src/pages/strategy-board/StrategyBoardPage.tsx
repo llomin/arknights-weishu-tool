@@ -154,7 +154,7 @@ export function StrategyBoardPage() {
       const covenant = [...primaryCovenants, ...secondaryCovenants].find(
         (c) => c.id === id,
       );
-      return covenant?.recommandWith ?? [];
+      return covenant?.recommendWith ?? [];
     }),
   );
 

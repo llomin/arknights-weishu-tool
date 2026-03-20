@@ -31,7 +31,7 @@ export const covenants = Object.entries(parsedCovenants)
       description: value.description,
       sortOrder: index,
       isPrimary: index < PRIMARY_COVENANT_COUNT,
-      recommandWith: value.recommandWith,
+      recommendWith: value.recommendWith,
     };
   });
 
