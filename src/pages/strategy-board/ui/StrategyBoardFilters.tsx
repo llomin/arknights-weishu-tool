@@ -481,7 +481,7 @@ export function StrategyBoardFilters({
                         )
                       }
                     >
-                      ...
+                      ···
                     </button>
                     {openedPresetMenuId === preset.id ? (
                       <div className={styles.presetMenuPanel}>

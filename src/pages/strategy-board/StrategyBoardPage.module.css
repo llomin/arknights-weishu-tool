@@ -482,6 +482,7 @@
 }
 
 .presetChipActive {
+  font-weight: bold;
   border-color: rgba(31, 127, 73, 0.34);
   background:
     linear-gradient(180deg, rgba(232, 255, 240, 0.98) 0%, rgba(191, 239, 209, 0.98) 100%);
@@ -504,7 +505,7 @@
   background: rgba(255, 255, 255, 0.9);
   color: #7b879a;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   cursor: pointer;
   transition:
