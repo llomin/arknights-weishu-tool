@@ -2,10 +2,10 @@ import type { OperatorPriorityBucket } from '@/shared/types/domain';
 
 const PRIORITY_WEIGHT_MAP: Record<OperatorPriorityBucket, number> = {
   持续叠加: 0,
-  单次叠加: 1,
-  特异化: 2,
-  整备能力: 3,
-  作战能力: 4,
+  特异化: 1,
+  作战能力: 2,
+  单次叠加: 3,
+  整备能力: 4,
   其他: 5,
 };
 
