@@ -5,6 +5,7 @@ import type { CovenantPreset, StrategyState } from '@/shared/types/domain';
 interface StrategyStore extends StrategyState {
   applyCovenantPreset: (presetId: string) => void;
   deleteCovenantPreset: (presetId: string) => void;
+  importCovenantPresets: (value: unknown) => void;
   renameCovenantPreset: (presetId: string, name: string) => void;
   reset: () => void;
   restoreRemovedOperators: () => void;
@@ -177,12 +178,54 @@ function saveCovenantPresets(covenantPresets: CovenantPreset[]) {
   }
 }
 
+function cloneCovenantPreset(preset: CovenantPreset): CovenantPreset {
+  return {
+    id: preset.id,
+    name: preset.name,
+    selectedCovenantIds: [...preset.selectedCovenantIds],
+    selectedCovenantTargetMap: { ...preset.selectedCovenantTargetMap },
+  };
+}
+
 function createCovenantPresetId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
 
   return `preset-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizeImportedCovenantPresets(value: unknown) {
+  const rawItems =
+    Array.isArray(value)
+      ? value
+      : value &&
+          typeof value === 'object' &&
+          Array.isArray((value as { presets?: unknown[] }).presets)
+        ? (value as { presets: unknown[] }).presets
+        : [value];
+
+  return rawItems
+    .map((item) => normalizeCovenantPreset(item))
+    .filter((item): item is CovenantPreset => item !== null);
+}
+
+function createImportedCovenantPreset(
+  preset: CovenantPreset,
+  usedPresetIds: Set<string>,
+) {
+  let nextPresetId = preset.id;
+
+  while (usedPresetIds.has(nextPresetId)) {
+    nextPresetId = createCovenantPresetId();
+  }
+
+  usedPresetIds.add(nextPresetId);
+
+  return {
+    ...cloneCovenantPreset(preset),
+    id: nextPresetId,
+  };
 }
 
 function loadFavoriteOperatorIds() {
@@ -257,6 +300,30 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
       const covenantPresets = state.covenantPresets.filter(
         (item) => item.id !== presetId,
       );
+
+      saveCovenantPresets(covenantPresets);
+
+      return {
+        covenantPresets,
+      };
+    }),
+  importCovenantPresets: (value) =>
+    set((state) => {
+      const importedPresets = normalizeImportedCovenantPresets(value);
+
+      if (importedPresets.length === 0) {
+        return state;
+      }
+
+      const usedPresetIds = new Set(
+        state.covenantPresets.map((preset) => preset.id),
+      );
+      const covenantPresets = [
+        ...state.covenantPresets,
+        ...importedPresets.map((preset) =>
+          createImportedCovenantPreset(preset, usedPresetIds),
+        ),
+      ];
 
       saveCovenantPresets(covenantPresets);
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import clsx from 'clsx';
 import {
   covenantMap,
@@ -23,6 +23,7 @@ export interface StrategyBoardFiltersProps {
   maxVisibleTier: number | null;
   onApplyCovenantPreset: (presetId: string) => void;
   onDeleteCovenantPreset: (presetId: string) => void;
+  onImportCovenantPresets: (value: unknown) => void;
   onRenameCovenantPreset: (presetId: string, name: string) => void;
   onReset: () => void;
   onSaveCovenantPreset: (name: string) => void;
@@ -87,6 +88,48 @@ function buildPresetTitle(preset: CovenantPreset) {
   );
 }
 
+function buildPresetExportPayload(preset: CovenantPreset) {
+  return {
+    id: preset.id,
+    name: preset.name,
+    selectedCovenantIds: [...preset.selectedCovenantIds],
+    selectedCovenantTargetMap: { ...preset.selectedCovenantTargetMap },
+  };
+}
+
+function sanitizePresetFileName(name: string) {
+  const trimmedName = name.trim();
+
+  if (trimmedName.length === 0) {
+    return 'preset';
+  }
+
+  return trimmedName.replace(/[\\/:*?"<>|]+/g, '-');
+}
+
+function downloadJsonFile(filename: string, value: unknown) {
+  if (
+    typeof window === 'undefined' ||
+    typeof document === 'undefined' ||
+    typeof URL.createObjectURL !== 'function'
+  ) {
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(value, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  });
+  const objectUrl = URL.createObjectURL(blob);
+  const downloadLink = document.createElement('a');
+
+  downloadLink.href = objectUrl;
+  downloadLink.download = filename;
+  document.body.append(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 function matchesPresetSelection(
   preset: CovenantPreset,
   selectedCovenantIds: string[],
@@ -110,6 +153,7 @@ export function StrategyBoardFilters({
   maxVisibleTier,
   onApplyCovenantPreset,
   onDeleteCovenantPreset,
+  onImportCovenantPresets,
   onRenameCovenantPreset,
   onReset,
   onSaveCovenantPreset,
@@ -123,6 +167,7 @@ export function StrategyBoardFilters({
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
   const [openedPresetMenuId, setOpenedPresetMenuId] = useState<string | null>(null);
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const editingPreset = covenantPresets.find((preset) => preset.id === editingPresetId) ?? null;
   const defaultPresetName = buildDefaultPresetName(
     selectedCovenantIds,
@@ -209,6 +254,44 @@ export function StrategyBoardFilters({
       currentPresetId === presetId ? null : currentPresetId,
     );
     onDeleteCovenantPreset(presetId);
+  }
+
+  function handleExportPreset(preset: CovenantPreset) {
+    setOpenedPresetMenuId(null);
+    downloadJsonFile(
+      `strategy-board-covenant-preset-${sanitizePresetFileName(preset.name)}.json`,
+      buildPresetExportPayload(preset),
+    );
+  }
+
+  function handleExportAllPresets() {
+    downloadJsonFile(
+      'strategy-board-covenant-presets.json',
+      covenantPresets.map((preset) => buildPresetExportPayload(preset)),
+    );
+  }
+
+  function handleOpenImportPicker() {
+    setOpenedPresetMenuId(null);
+    importFileInputRef.current?.click();
+  }
+
+  async function handleImportPresets(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const importFile = input.files?.[0];
+
+    if (!importFile) {
+      return;
+    }
+
+    try {
+      const rawValue = await importFile.text();
+      onImportCovenantPresets(JSON.parse(rawValue));
+    } catch {
+      // Ignore malformed JSON or unreadable files and keep current presets intact.
+    } finally {
+      input.value = '';
+    }
   }
 
   function renderCovenantChip(
@@ -299,9 +382,41 @@ export function StrategyBoardFilters({
         </div>
 
         <div className={styles.filterGroup}>
-          <div className={styles.filterLabelRow}>
+          <div className={clsx(styles.filterLabelRow, styles.presetLabelRow)}>
             <span className={styles.filterLabel}>预设组合</span>
-            <span className={styles.filterHint}>
+            <div className={styles.filterInlineActions}>
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className={styles.visuallyHiddenInput}
+                aria-label="导入预设组合 JSON"
+                onChange={handleImportPresets}
+              />
+              <button
+                type="button"
+                className={styles.filterLinkButton}
+                title="导入预设组合 JSON"
+                onClick={handleOpenImportPicker}
+              >
+                导入
+              </button>
+              <button
+                type="button"
+                className={styles.filterLinkButton}
+                aria-label="导出全部预设组合"
+                title={
+                  covenantPresets.length > 0
+                    ? '导出全部预设组合'
+                    : '当前没有可导出的预设组合'
+                }
+                disabled={covenantPresets.length === 0}
+                onClick={handleExportAllPresets}
+              >
+                导出
+              </button>
+            </div>
+            <span className={clsx(styles.filterHint, styles.presetFilterHint)}>
               点击应用到下方主次盟约；悬浮可查看具体人数
             </span>
           </div>
@@ -385,6 +500,14 @@ export function StrategyBoardFilters({
                           onClick={() => handleRenamePreset(preset)}
                         >
                           重命名
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.presetMenuItem}
+                          aria-label={`导出预设组合 ${preset.name}`}
+                          onClick={() => handleExportPreset(preset)}
+                        >
+                          导出
                         </button>
                         <button
                           type="button"

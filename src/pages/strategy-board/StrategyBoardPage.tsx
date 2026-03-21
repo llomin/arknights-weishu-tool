@@ -30,6 +30,9 @@ export function StrategyBoardPage() {
   const deleteCovenantPreset = useStrategyStore(
     (state) => state.deleteCovenantPreset,
   );
+  const importCovenantPresets = useStrategyStore(
+    (state) => state.importCovenantPresets,
+  );
   const renameCovenantPreset = useStrategyStore(
     (state) => state.renameCovenantPreset,
   );
@@ -99,6 +102,7 @@ export function StrategyBoardPage() {
         maxVisibleTier={maxVisibleTier}
         onApplyCovenantPreset={applyCovenantPreset}
         onDeleteCovenantPreset={deleteCovenantPreset}
+        onImportCovenantPresets={importCovenantPresets}
         onRenameCovenantPreset={renameCovenantPreset}
         onSaveCovenantPreset={saveCovenantPreset}
         onUpdateCovenantPreset={updateCovenantPreset}

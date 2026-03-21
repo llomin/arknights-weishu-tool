@@ -55,6 +55,7 @@ describe('StrategyBoard sections', () => {
     const onSaveCovenantPreset = vi.fn();
     const onApplyCovenantPreset = vi.fn();
     const onDeleteCovenantPreset = vi.fn();
+    const onImportCovenantPresets = vi.fn();
     const onRenameCovenantPreset = vi.fn();
     const onUpdateCovenantPreset = vi.fn();
 
@@ -95,6 +96,7 @@ describe('StrategyBoard sections', () => {
         onSaveCovenantPreset,
         onApplyCovenantPreset,
         onDeleteCovenantPreset,
+        onImportCovenantPresets,
         onRenameCovenantPreset,
         onUpdateCovenantPreset,
         onSetMaxPopulation,
@@ -199,6 +201,86 @@ describe('StrategyBoard sections', () => {
     promptSpy.mockRestore();
   });
 
+  it('renders preset import and export buttons before the preset hint text', () => {
+    render(
+      createElement(StrategyBoardFilters, {
+        covenantPresets: [],
+        currentLevel: 4,
+        maxPopulation: 9,
+        maxVisibleTier: 5,
+        selectedCovenantIds: [],
+        selectedCovenantTargetMap: {},
+        onSaveCovenantPreset: vi.fn(),
+        onApplyCovenantPreset: vi.fn(),
+        onDeleteCovenantPreset: vi.fn(),
+        onImportCovenantPresets: vi.fn(),
+        onRenameCovenantPreset: vi.fn(),
+        onUpdateCovenantPreset: vi.fn(),
+        onSetMaxPopulation: vi.fn(),
+        onToggleCovenant: vi.fn(),
+        onToggleCurrentLevel: vi.fn(),
+        onReset: vi.fn(),
+      }),
+    );
+
+    const presetLabel = screen.getByText('预设组合');
+    const presetLabelRow = presetLabel.closest(`.${styles.presetLabelRow}`);
+
+    if (!(presetLabelRow instanceof HTMLElement)) {
+      throw new Error('未找到预设组合标题行');
+    }
+
+    const importButton = within(presetLabelRow).getByRole('button', { name: '导入' });
+    const exportButton = within(presetLabelRow).getByRole('button', { name: '导出全部预设组合' });
+    const presetHint = within(presetLabelRow).getByText(
+      '点击应用到下方主次盟约；悬浮可查看具体人数',
+    );
+
+    expect(
+      importButton.compareDocumentPosition(presetHint) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      exportButton.compareDocumentPosition(presetHint) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('renders preset import and export buttons as link-style actions', () => {
+    render(
+      createElement(StrategyBoardFilters, {
+        covenantPresets: [],
+        currentLevel: 4,
+        maxPopulation: 9,
+        maxVisibleTier: 5,
+        selectedCovenantIds: [],
+        selectedCovenantTargetMap: {},
+        onSaveCovenantPreset: vi.fn(),
+        onApplyCovenantPreset: vi.fn(),
+        onDeleteCovenantPreset: vi.fn(),
+        onImportCovenantPresets: vi.fn(),
+        onRenameCovenantPreset: vi.fn(),
+        onUpdateCovenantPreset: vi.fn(),
+        onSetMaxPopulation: vi.fn(),
+        onToggleCovenant: vi.fn(),
+        onToggleCurrentLevel: vi.fn(),
+        onReset: vi.fn(),
+      }),
+    );
+
+    const importButton = screen.getByRole('button', { name: '导入' });
+    const exportButton = screen.getByRole('button', { name: '导出全部预设组合' });
+    const filterLinkButtonClassName = styles.filterLinkButton;
+    const ghostButtonClassName = styles.ghostButton;
+
+    if (!filterLinkButtonClassName || !ghostButtonClassName) {
+      throw new Error('导入导出 Link 按钮样式类缺失');
+    }
+
+    expect(importButton).toHaveClass(filterLinkButtonClassName);
+    expect(exportButton).toHaveClass(filterLinkButtonClassName);
+    expect(importButton).not.toHaveClass(ghostButtonClassName);
+    expect(exportButton).not.toHaveClass(ghostButtonClassName);
+  });
+
   it('clears the active preset state when reset filters is clicked', () => {
     const primaryCovenant = primaryCovenants[0];
     const secondaryCovenant = secondaryCovenants[0];
@@ -242,6 +324,7 @@ describe('StrategyBoard sections', () => {
         onSaveCovenantPreset: vi.fn(),
         onApplyCovenantPreset: vi.fn(),
         onDeleteCovenantPreset: vi.fn(),
+        onImportCovenantPresets: vi.fn(),
         onRenameCovenantPreset: vi.fn(),
         onUpdateCovenantPreset: vi.fn(),
         onSetMaxPopulation: vi.fn(),

@@ -1,5 +1,12 @@
 import { createElement } from 'react';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   covenantMap,
@@ -214,6 +221,21 @@ function getOperatorCardByName(container: HTMLElement, operatorName: string) {
   }
 
   return operatorCard;
+}
+
+function readBlobAsText(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      reject(reader.error ?? new Error('读取导出文件内容失败'));
+    };
+    reader.onload = () => {
+      resolve(String(reader.result ?? ''));
+    };
+
+    reader.readAsText(blob);
+  });
 }
 
 function getMatchedSelectedCovenantsForTest(
@@ -771,5 +793,213 @@ describe('StrategyBoardPage', () => {
     ).not.toBeInTheDocument();
 
     promptSpy.mockRestore();
+  });
+
+  it('支持导出单个预设和全部预设为 JSON', async () => {
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL');
+    const revokeObjectURLSpy = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined);
+    const anchorClickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    const presetA =
+      primaryCovenants.find((item) => item.id === '炎') ?? primaryCovenants[0];
+    const presetB =
+      secondaryCovenants.find((item) => item.id === '突袭') ?? secondaryCovenants[0];
+
+    if (!presetA || !presetB) {
+      throw new Error('缺少用于导出预设组合测试的盟约数据');
+    }
+
+    let exportedBlobs: Blob[] = [];
+
+    createObjectURLSpy.mockImplementation((object) => {
+      if (!(object instanceof Blob)) {
+        throw new Error('导出对象不是 Blob');
+      }
+
+      exportedBlobs = [...exportedBlobs, object];
+      return `blob:mock-${exportedBlobs.length}`;
+    });
+
+    useStrategyStore.setState({
+      selectedCovenantIds: [],
+      selectedCovenantTargetMap: {},
+      maxPopulation: 9,
+      currentLevel: null,
+      searchKeyword: '',
+      pickedOperatorIds: [],
+      removedOperatorIds: [],
+      covenantPresets: [
+        {
+          id: 'preset-a',
+          name: '炎组合',
+          selectedCovenantIds: [presetA.id],
+          selectedCovenantTargetMap: {
+            [presetA.id]: presetA.activationStages[0] ?? presetA.activationCount,
+          },
+        },
+        {
+          id: 'preset-b',
+          name: '突袭组合',
+          selectedCovenantIds: [presetB.id],
+          selectedCovenantTargetMap: {
+            [presetB.id]: presetB.activationStages[0] ?? presetB.activationCount,
+          },
+        },
+      ],
+    });
+
+    render(createElement(StrategyBoardPage));
+
+    fireEvent.click(screen.getByRole('button', { name: '预设组合操作 炎组合' }));
+    fireEvent.click(screen.getByRole('button', { name: '导出预设组合 炎组合' }));
+
+    await waitFor(() => {
+      expect(exportedBlobs).toHaveLength(1);
+    });
+
+    expect(JSON.parse(await readBlobAsText(exportedBlobs[0]!))).toMatchObject({
+      id: 'preset-a',
+      name: '炎组合',
+      selectedCovenantIds: [presetA.id],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '导出全部预设组合' }));
+
+    await waitFor(() => {
+      expect(exportedBlobs).toHaveLength(2);
+    });
+
+    expect(JSON.parse(await readBlobAsText(exportedBlobs[1]!))).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'preset-a',
+          name: '炎组合',
+        }),
+        expect.objectContaining({
+          id: 'preset-b',
+          name: '突袭组合',
+        }),
+      ]),
+    );
+    expect(anchorClickSpy).toHaveBeenCalledTimes(2);
+    expect(revokeObjectURLSpy).toHaveBeenCalledTimes(2);
+
+    anchorClickSpy.mockRestore();
+    revokeObjectURLSpy.mockRestore();
+    createObjectURLSpy.mockRestore();
+
+    if (originalCreateObjectURL) {
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        value: originalCreateObjectURL,
+      });
+    } else {
+      delete (URL as { createObjectURL?: typeof URL.createObjectURL }).createObjectURL;
+    }
+
+    if (originalRevokeObjectURL) {
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        value: originalRevokeObjectURL,
+      });
+    } else {
+      delete (URL as { revokeObjectURL?: typeof URL.revokeObjectURL }).revokeObjectURL;
+    }
+  });
+
+  it('支持通过 JSON 增量导入预设组合且不影响已有项', async () => {
+    const existingPreset =
+      primaryCovenants.find((item) => item.id === '炎') ?? primaryCovenants[0];
+    const importedPreset =
+      secondaryCovenants.find((item) => item.id === '突袭') ?? secondaryCovenants[0];
+
+    if (!existingPreset || !importedPreset) {
+      throw new Error('缺少用于导入预设组合测试的盟约数据');
+    }
+
+    useStrategyStore.setState({
+      selectedCovenantIds: [],
+      selectedCovenantTargetMap: {},
+      maxPopulation: 9,
+      currentLevel: null,
+      searchKeyword: '',
+      pickedOperatorIds: [],
+      removedOperatorIds: [],
+      covenantPresets: [
+        {
+          id: 'preset-existing',
+          name: '已有组合',
+          selectedCovenantIds: [existingPreset.id],
+          selectedCovenantTargetMap: {
+            [existingPreset.id]:
+              existingPreset.activationStages[0] ?? existingPreset.activationCount,
+          },
+        },
+      ],
+    });
+
+    render(createElement(StrategyBoardPage));
+
+    const importInput = screen.getByLabelText('导入预设组合 JSON');
+    const importFile = new File(['placeholder'], 'strategy-board-presets.json', {
+      type: 'application/json',
+    });
+
+    Object.defineProperty(importFile, 'text', {
+      configurable: true,
+      value: vi.fn().mockResolvedValue(
+        JSON.stringify([
+          {
+            id: 'preset-existing',
+            name: '导入组合',
+            selectedCovenantIds: [importedPreset.id],
+            selectedCovenantTargetMap: {
+              [importedPreset.id]:
+                importedPreset.activationStages[0] ?? importedPreset.activationCount,
+            },
+          },
+        ]),
+      ),
+    });
+
+    fireEvent.change(importInput, {
+      target: {
+        files: [importFile],
+      },
+    });
+
+    await waitFor(() => {
+      expect(useStrategyStore.getState().covenantPresets).toHaveLength(2);
+    });
+
+    expect(useStrategyStore.getState().covenantPresets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'preset-existing',
+          name: '已有组合',
+        }),
+        expect.objectContaining({
+          name: '导入组合',
+          selectedCovenantIds: [importedPreset.id],
+        }),
+      ]),
+    );
+    expect(screen.getByRole('button', { name: '已有组合' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '导入组合' })).toBeInTheDocument();
   });
 });
