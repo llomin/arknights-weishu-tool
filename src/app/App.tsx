@@ -1,9 +1,12 @@
+import { Analytics } from '@vercel/analytics/react';
 import { StrategyBoardPage } from '@/pages/strategy-board/StrategyBoardPage';
-import { inject } from '@vercel/analytics';
-
-inject();
 
 export function App() {
-  return <StrategyBoardPage />;
+  return (
+    <>
+      <StrategyBoardPage />
+      <Analytics />
+    </>
+  );
 }
 
