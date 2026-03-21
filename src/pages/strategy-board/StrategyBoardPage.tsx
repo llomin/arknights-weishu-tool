@@ -804,7 +804,7 @@ export function StrategyBoardPage() {
           {selectedCovenantIds.length > 0 ? (
             <div className={styles.filterActions}>
               <button className={styles.resetButton} type="button" onClick={() => reset()}>
-                再来一把
+                重置筛选
               </button>
             </div>
           ) : null}
