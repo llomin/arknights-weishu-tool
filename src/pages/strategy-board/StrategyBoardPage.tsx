@@ -310,8 +310,8 @@ export function StrategyBoardPage() {
         Number(hasMatchedPrimarySelectedCovenant(left)) ||
       Number(isMultiHitSelectedOperator(right)) -
         Number(isMultiHitSelectedOperator(left)) ||
-      right.tier - left.tier ||
       left.priorityWeight - right.priorityWeight ||
+      right.tier - left.tier ||
       left.name.localeCompare(right.name, 'zh-Hans-CN')
     );
   }
