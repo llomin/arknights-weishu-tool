@@ -54,7 +54,6 @@ export function StrategyBoardPage() {
     maxVisibleTier,
     otherGroups,
     priorityGroups,
-    recommendedCovenantIds,
     recommendedLineup,
     removedOperators,
     searchKeywords,
@@ -101,7 +100,6 @@ export function StrategyBoardPage() {
         onApplyCovenantPreset={applyCovenantPreset}
         onDeleteCovenantPreset={deleteCovenantPreset}
         onRenameCovenantPreset={renameCovenantPreset}
-        recommendedCovenantIdSet={recommendedCovenantIds}
         onSaveCovenantPreset={saveCovenantPreset}
         onUpdateCovenantPreset={updateCovenantPreset}
         selectedCovenantIds={selectedCovenantIds}

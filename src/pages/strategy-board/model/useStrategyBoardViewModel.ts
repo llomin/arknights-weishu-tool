@@ -100,11 +100,6 @@ export function useStrategyBoardViewModel(
         selectedPrimaryCovenantIdSet,
       ),
   );
-  const recommendedCovenantIds = new Set(
-    input.selectedCovenantIds.flatMap(
-      (id) => covenantMap[id]?.recommendWith ?? [],
-    ),
-  );
   const priorityGroups = sortGroupsWithPrimaryFirst(
     buildSectionGroups(groups, isPriorityOperator),
   );
@@ -118,7 +113,6 @@ export function useStrategyBoardViewModel(
     maxVisibleTier,
     otherGroups,
     priorityGroups,
-    recommendedCovenantIds,
     recommendedLineup,
     removedOperators,
     searchKeywords,

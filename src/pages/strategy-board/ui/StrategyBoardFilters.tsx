@@ -30,7 +30,6 @@ export interface StrategyBoardFiltersProps {
   onToggleCovenant: (covenantId: string, activationStages: number[]) => void;
   onToggleCurrentLevel: (level: OperatorEntity['tier']) => void;
   onUpdateCovenantPreset: (presetId: string) => void;
-  recommendedCovenantIdSet: Set<string>;
   selectedCovenantIds: string[];
   selectedCovenantTargetMap: StrategyState['selectedCovenantTargetMap'];
 }
@@ -118,7 +117,6 @@ export function StrategyBoardFilters({
   onToggleCovenant,
   onToggleCurrentLevel,
   onUpdateCovenantPreset,
-  recommendedCovenantIdSet,
   selectedCovenantIds,
   selectedCovenantTargetMap,
 }: StrategyBoardFiltersProps) {
@@ -221,7 +219,6 @@ export function StrategyBoardFilters({
     activationStages: number[],
   ) {
     const isSelected = selectedCovenantIds.includes(covenantId);
-    const isRecommended = recommendedCovenantIdSet.has(covenantId);
     const selectableStages = activationStages.filter((stage) => stage <= maxPopulation);
     const currentTargetCount =
       selectedCovenantTargetMap[covenantId] ?? selectableStages[0];
@@ -240,7 +237,6 @@ export function StrategyBoardFilters({
           isPrimary ? styles.covenantChipPrimary : styles.covenantChipSecondary,
           isSelected && styles.covenantChipSelected,
           areCovenantFiltersLocked && styles.covenantChipLocked,
-          !isSelected && isRecommended && styles.covenantChipRecommended,
         )}
         aria-pressed={isSelected}
         title={title}

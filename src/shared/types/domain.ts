@@ -14,7 +14,6 @@ export interface CovenantEntity {
   description: string;
   sortOrder: number;
   isPrimary: boolean;
-  recommendWith?: string[];
 }
 
 export interface OperatorEntity {

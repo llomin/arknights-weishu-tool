@@ -87,7 +87,6 @@ describe('StrategyBoard sections', () => {
         currentLevel: 4,
         maxPopulation: 9,
         maxVisibleTier: 5,
-        recommendedCovenantIdSet: new Set([primaryCovenant.id, secondaryCovenant.id]),
         selectedCovenantIds: [primaryCovenant.id, secondaryCovenant.id],
         selectedCovenantTargetMap: {
           [primaryCovenant.id]: primaryStage!,
@@ -125,6 +124,7 @@ describe('StrategyBoard sections', () => {
     expect(saveButton).toHaveClass(presetSaveButtonClassName);
     expect(saveButton).toHaveClass(presetSaveButtonActiveClassName);
     expect(saveButton).toHaveTextContent('+');
+    expect(screen.getByRole('button', { name: clickableCovenant.name })).toBeInTheDocument();
 
     expect(presetButton).toHaveAttribute(
       'title',
@@ -234,7 +234,6 @@ describe('StrategyBoard sections', () => {
         currentLevel: 4,
         maxPopulation: 9,
         maxVisibleTier: 5,
-        recommendedCovenantIdSet: new Set([primaryCovenant.id, secondaryCovenant.id]),
         selectedCovenantIds: [primaryCovenant.id, secondaryCovenant.id],
         selectedCovenantTargetMap: {
           [primaryCovenant.id]: primaryStage!,

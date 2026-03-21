@@ -147,5 +147,6 @@ describe('useStrategyBoardViewModel', () => {
     expect(result.current.recommendedLineup).toEqual(expectedRecommendedLineup);
     expect(result.current.priorityGroups).toEqual(expectedPriorityGroups);
     expect(result.current.otherGroups).toEqual(expectedOtherGroups);
+    expect('recommendedCovenantIds' in result.current).toBe(false);
   });
 });
