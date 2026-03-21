@@ -38,9 +38,17 @@ export interface OperatorGroupView {
   operators: OperatorEntity[];
 }
 
+export interface CovenantPreset {
+  id: string;
+  name: string;
+  selectedCovenantIds: string[];
+  selectedCovenantTargetMap: Record<string, number>;
+}
+
 export interface StrategyState {
   selectedCovenantIds: string[];
   selectedCovenantTargetMap: Record<string, number>;
+  covenantPresets: CovenantPreset[];
   maxPopulation: 8 | 9;
   currentLevel: OperatorEntity['tier'] | null;
   searchKeyword: string;

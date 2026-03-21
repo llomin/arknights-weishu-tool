@@ -1,6 +1,6 @@
 import { createElement } from 'react';
-import { cleanup, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   covenantMap,
   primaryCovenants,
@@ -18,6 +18,7 @@ const highPriorityBuckets = new Set(['持续叠加', '单次叠加', '特异化'
 const defaultMaxPopulation: StrategyState['maxPopulation'] = 9;
 
 function resetStrategyStore() {
+  window.localStorage.clear();
   useStrategyStore.setState({
     selectedCovenantIds: [],
     selectedCovenantTargetMap: {},
@@ -27,6 +28,7 @@ function resetStrategyStore() {
     pickedOperatorIds: [],
     removedOperatorIds: [],
     favoriteOperatorIds: [],
+    covenantPresets: [],
   });
 }
 
@@ -634,5 +636,140 @@ describe('StrategyBoardPage', () => {
     expect(nonPrimaryOperatorCard).toHaveClass(operatorCardClassName);
     expect(nonPrimaryOperatorCard).not.toHaveClass(primaryCardClassName);
     expect(nonPrimaryOperatorCard.parentElement).not.toHaveClass(primaryCardClassName);
+  });
+
+  it('保存预设组合后可以恢复主次盟约筛选并支持修改、重命名和删除', () => {
+    const primaryCovenant =
+      primaryCovenants.find((item) => item.id === '炎') ?? primaryCovenants[0];
+    const secondaryCovenant =
+      secondaryCovenants.find((item) => item.id === '突袭') ?? secondaryCovenants[0];
+
+    if (!primaryCovenant || !secondaryCovenant) {
+      throw new Error('缺少用于预设组合测试的盟约数据');
+    }
+
+    const primaryStage = primaryCovenant.activationStages[1] ?? primaryCovenant.activationStages[0];
+    const secondaryStage =
+      secondaryCovenant.activationStages[0] ?? secondaryCovenant.activationCount;
+    const promptSpy = vi
+      .spyOn(window, 'prompt')
+      .mockReturnValueOnce('炎突组合')
+      .mockReturnValueOnce('炎突改名');
+
+    useStrategyStore.setState({
+      selectedCovenantIds: [primaryCovenant.id, secondaryCovenant.id],
+      selectedCovenantTargetMap: {
+        [primaryCovenant.id]: primaryStage!,
+        [secondaryCovenant.id]: secondaryStage,
+      },
+      maxPopulation: 9,
+      currentLevel: null,
+      searchKeyword: '',
+      pickedOperatorIds: [],
+      removedOperatorIds: [],
+      covenantPresets: [],
+    });
+
+    render(createElement(StrategyBoardPage));
+
+    const saveButton = screen.getByRole('button', { name: '保存当前组合' });
+    const presetSaveButtonClassName = styles.presetSaveButton;
+    const presetSaveButtonActiveClassName = styles.presetSaveButtonActive;
+
+    if (!presetSaveButtonClassName || !presetSaveButtonActiveClassName) {
+      throw new Error('预设组合保存按钮样式类缺失');
+    }
+
+    expect(saveButton).toHaveClass(presetSaveButtonClassName);
+    expect(saveButton).toHaveClass(presetSaveButtonActiveClassName);
+
+    fireEvent.click(saveButton);
+
+    expect(promptSpy).toHaveBeenCalledWith(
+      '请输入组合名称',
+      `${primaryCovenant.name}${primaryStage}-${secondaryCovenant.name}${secondaryStage}`,
+    );
+    expect(useStrategyStore.getState().covenantPresets).toHaveLength(1);
+
+    const presetButton = screen.getByRole('button', { name: '炎突组合' });
+    const presetMenuButton = screen.getByRole('button', {
+      name: '预设组合操作 炎突组合',
+    });
+
+    expect(presetButton).toHaveAttribute(
+      'title',
+      expect.stringContaining(`${primaryCovenant.name} ${primaryStage}人`),
+    );
+    expect(presetButton).toHaveAttribute(
+      'title',
+      expect.stringContaining(`${secondaryCovenant.name} ${secondaryStage}人`),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '重置筛选' }));
+
+    expect(useStrategyStore.getState().selectedCovenantIds).toEqual([]);
+
+    fireEvent.click(presetButton);
+
+    expect(saveButton).toBeDisabled();
+    expect(useStrategyStore.getState().selectedCovenantIds).toEqual([
+      primaryCovenant.id,
+      secondaryCovenant.id,
+    ]);
+    expect(useStrategyStore.getState().selectedCovenantTargetMap).toEqual({
+      [primaryCovenant.id]: primaryStage,
+      [secondaryCovenant.id]: secondaryStage,
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: `${primaryCovenant.name} ${primaryStage}人` }),
+    );
+
+    expect(useStrategyStore.getState().selectedCovenantTargetMap).toEqual({
+      [primaryCovenant.id]: primaryStage,
+      [secondaryCovenant.id]: secondaryStage,
+    });
+
+    fireEvent.click(presetButton);
+
+    expect(saveButton).not.toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: '预设组合操作 炎突组合' }));
+    fireEvent.click(screen.getByRole('button', { name: '修改预设组合 炎突组合' }));
+
+    expect(saveButton).toHaveTextContent('应用修改');
+    expect(saveButton).toHaveTextContent('✓');
+
+    fireEvent.click(screen.getByRole('button', { name: '9 人' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: `${primaryCovenant.name} ${primaryStage}人` }),
+    );
+    fireEvent.click(saveButton);
+
+    expect(useStrategyStore.getState().covenantPresets[0]?.name).toBe('炎突组合');
+    expect(useStrategyStore.getState().covenantPresets[0]?.selectedCovenantTargetMap).toEqual({
+      [primaryCovenant.id]: primaryCovenant.activationStages[2] ?? primaryCovenant.activationStages[1] ?? primaryStage,
+      [secondaryCovenant.id]: secondaryStage,
+    });
+
+    fireEvent.click(presetMenuButton);
+    fireEvent.click(screen.getByRole('button', { name: '重命名预设组合 炎突组合' }));
+
+    expect(promptSpy).toHaveBeenCalledWith('请输入新的组合名称', '炎突组合');
+    expect(promptSpy).toHaveBeenCalledTimes(2);
+    expect(useStrategyStore.getState().covenantPresets[0]?.name).toBe('炎突改名');
+    expect(
+      screen.queryByRole('button', { name: '炎突组合' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '预设组合操作 炎突改名' }));
+    fireEvent.click(screen.getByRole('button', { name: '删除预设组合 炎突改名' }));
+
+    expect(useStrategyStore.getState().covenantPresets).toEqual([]);
+    expect(
+      screen.queryByRole('button', { name: '炎突改名' }),
+    ).not.toBeInTheDocument();
+
+    promptSpy.mockRestore();
   });
 });

@@ -9,6 +9,7 @@ import { StrategyBoardRecommendationSection } from './ui/StrategyBoardRecommenda
 import { StrategyBoardSearchResults } from './ui/StrategyBoardSearchResults';
 
 export function StrategyBoardPage() {
+  const covenantPresets = useStrategyStore((state) => state.covenantPresets);
   const selectedCovenantIds = useStrategyStore(
     (state) => state.selectedCovenantIds,
   );
@@ -23,6 +24,18 @@ export function StrategyBoardPage() {
   const restoreRemovedOperators = useStrategyStore(
     (state) => state.restoreRemovedOperators,
   );
+  const applyCovenantPreset = useStrategyStore(
+    (state) => state.applyCovenantPreset,
+  );
+  const deleteCovenantPreset = useStrategyStore(
+    (state) => state.deleteCovenantPreset,
+  );
+  const renameCovenantPreset = useStrategyStore(
+    (state) => state.renameCovenantPreset,
+  );
+  const saveCovenantPreset = useStrategyStore(
+    (state) => state.saveCovenantPreset,
+  );
   const setMaxPopulation = useStrategyStore((state) => state.setMaxPopulation);
   const toggleCovenant = useStrategyStore((state) => state.toggleCovenant);
   const toggleCurrentLevel = useStrategyStore((state) => state.toggleCurrentLevel);
@@ -32,6 +45,9 @@ export function StrategyBoardPage() {
   );
   const setSearchKeyword = useStrategyStore((state) => state.setSearchKeyword);
   const reset = useStrategyStore((state) => state.reset);
+  const updateCovenantPreset = useStrategyStore(
+    (state) => state.updateCovenantPreset,
+  );
 
   const {
     groups,
@@ -78,10 +94,16 @@ export function StrategyBoardPage() {
       />
 
       <StrategyBoardFilters
+        covenantPresets={covenantPresets}
         currentLevel={currentLevel}
         maxPopulation={maxPopulation}
         maxVisibleTier={maxVisibleTier}
+        onApplyCovenantPreset={applyCovenantPreset}
+        onDeleteCovenantPreset={deleteCovenantPreset}
+        onRenameCovenantPreset={renameCovenantPreset}
         recommendedCovenantIdSet={recommendedCovenantIds}
+        onSaveCovenantPreset={saveCovenantPreset}
+        onUpdateCovenantPreset={updateCovenantPreset}
         selectedCovenantIds={selectedCovenantIds}
         selectedCovenantTargetMap={selectedCovenantTargetMap}
         onSetMaxPopulation={setMaxPopulation}

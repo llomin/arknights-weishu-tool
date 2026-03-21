@@ -1,37 +1,218 @@
+import { useState } from 'react';
 import clsx from 'clsx';
 import {
+  covenantMap,
   primaryCovenants,
   secondaryCovenants,
 } from '@/entities/covenant/model/normalizeCovenants';
-import { selectableLevels, selectablePopulations } from '@/pages/strategy-board/model/strategyBoardDisplay';
-import type { OperatorEntity, StrategyState } from '@/shared/types/domain';
+import {
+  selectableLevels,
+  selectablePopulations,
+} from '@/pages/strategy-board/model/strategyBoardDisplay';
+import type {
+  CovenantPreset,
+  OperatorEntity,
+  StrategyState,
+} from '@/shared/types/domain';
 import styles from '../StrategyBoardPage.module.css';
 
 export interface StrategyBoardFiltersProps {
+  covenantPresets: CovenantPreset[];
   currentLevel: StrategyState['currentLevel'];
   maxPopulation: StrategyState['maxPopulation'];
   maxVisibleTier: number | null;
+  onApplyCovenantPreset: (presetId: string) => void;
+  onDeleteCovenantPreset: (presetId: string) => void;
+  onRenameCovenantPreset: (presetId: string, name: string) => void;
   onReset: () => void;
+  onSaveCovenantPreset: (name: string) => void;
   onSetMaxPopulation: (population: StrategyState['maxPopulation']) => void;
   onToggleCovenant: (covenantId: string, activationStages: number[]) => void;
   onToggleCurrentLevel: (level: OperatorEntity['tier']) => void;
+  onUpdateCovenantPreset: (presetId: string) => void;
   recommendedCovenantIdSet: Set<string>;
   selectedCovenantIds: string[];
   selectedCovenantTargetMap: StrategyState['selectedCovenantTargetMap'];
 }
 
+function formatSelectedCovenantEntry(
+  covenantId: string,
+  selectedCovenantTargetMap: StrategyState['selectedCovenantTargetMap'],
+) {
+  const covenantName = covenantMap[covenantId]?.name ?? covenantId;
+  const targetCount = selectedCovenantTargetMap[covenantId];
+
+  if (targetCount === undefined) {
+    return null;
+  }
+
+  return `${covenantName}${targetCount}`;
+}
+
+function buildDefaultPresetName(
+  selectedCovenantIds: string[],
+  selectedCovenantTargetMap: StrategyState['selectedCovenantTargetMap'],
+) {
+  return selectedCovenantIds
+    .map((covenantId) =>
+      formatSelectedCovenantEntry(covenantId, selectedCovenantTargetMap),
+    )
+    .filter((item): item is string => item !== null)
+    .join('-');
+}
+
+function buildPresetDetailLine(
+  preset: CovenantPreset,
+  isPrimary: boolean,
+) {
+  const entries = preset.selectedCovenantIds
+    .filter((covenantId) => covenantMap[covenantId]?.isPrimary === isPrimary)
+    .map((covenantId) => {
+      const covenantName = covenantMap[covenantId]?.name ?? covenantId;
+      const targetCount = preset.selectedCovenantTargetMap[covenantId];
+
+      if (targetCount === undefined) {
+        return null;
+      }
+
+      return `${covenantName} ${targetCount}人`;
+    })
+    .filter((item): item is string => item !== null);
+
+  return `${isPrimary ? '主要盟约' : '次要盟约'}：${entries.join('、') || '无'}`;
+}
+
+function buildPresetTitle(preset: CovenantPreset) {
+  return [buildPresetDetailLine(preset, true), buildPresetDetailLine(preset, false)].join(
+    '\n',
+  );
+}
+
+function matchesPresetSelection(
+  preset: CovenantPreset,
+  selectedCovenantIds: string[],
+  selectedCovenantTargetMap: StrategyState['selectedCovenantTargetMap'],
+) {
+  if (preset.selectedCovenantIds.length !== selectedCovenantIds.length) {
+    return false;
+  }
+
+  return preset.selectedCovenantIds.every(
+    (covenantId) =>
+      selectedCovenantIds.includes(covenantId) &&
+      selectedCovenantTargetMap[covenantId] === preset.selectedCovenantTargetMap[covenantId],
+  );
+}
+
 export function StrategyBoardFilters({
+  covenantPresets,
   currentLevel,
   maxPopulation,
   maxVisibleTier,
+  onApplyCovenantPreset,
+  onDeleteCovenantPreset,
+  onRenameCovenantPreset,
   onReset,
+  onSaveCovenantPreset,
   onSetMaxPopulation,
   onToggleCovenant,
   onToggleCurrentLevel,
+  onUpdateCovenantPreset,
   recommendedCovenantIdSet,
   selectedCovenantIds,
   selectedCovenantTargetMap,
 }: StrategyBoardFiltersProps) {
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
+  const [openedPresetMenuId, setOpenedPresetMenuId] = useState<string | null>(null);
+  const editingPreset = covenantPresets.find((preset) => preset.id === editingPresetId) ?? null;
+  const defaultPresetName = buildDefaultPresetName(
+    selectedCovenantIds,
+    selectedCovenantTargetMap,
+  );
+  const canSavePreset = defaultPresetName.length > 0;
+  const areCovenantFiltersLocked =
+    activePresetId !== null && editingPreset === null;
+  const isSaveButtonDisabled =
+    editingPreset === null
+      ? !canSavePreset || activePresetId !== null
+      : !canSavePreset;
+
+  function clearPresetState() {
+    setActivePresetId(null);
+    setEditingPresetId(null);
+    setOpenedPresetMenuId(null);
+  }
+
+  function handleSavePreset() {
+    if (!canSavePreset) {
+      return;
+    }
+
+    if (editingPreset !== null) {
+      onUpdateCovenantPreset(editingPreset.id);
+      setEditingPresetId(null);
+      setActivePresetId(editingPreset.id);
+      return;
+    }
+
+    const nextPresetName =
+      typeof window === 'undefined'
+        ? defaultPresetName
+        : window.prompt('请输入组合名称', defaultPresetName);
+
+    if (nextPresetName === null) {
+      return;
+    }
+
+    onSaveCovenantPreset(nextPresetName.trim() || defaultPresetName);
+  }
+
+  function handleApplyPreset(presetId: string) {
+    if (activePresetId === presetId) {
+      clearPresetState();
+      return;
+    }
+
+    setEditingPresetId(null);
+    setActivePresetId(presetId);
+    setOpenedPresetMenuId(null);
+    onApplyCovenantPreset(presetId);
+  }
+
+  function handleEditPreset(presetId: string) {
+    setActivePresetId(presetId);
+    setEditingPresetId(presetId);
+    setOpenedPresetMenuId(null);
+    onApplyCovenantPreset(presetId);
+  }
+
+  function handleRenamePreset(preset: CovenantPreset) {
+    const nextPresetName =
+      typeof window === 'undefined'
+        ? preset.name
+        : window.prompt('请输入新的组合名称', preset.name);
+
+    setOpenedPresetMenuId(null);
+
+    if (nextPresetName === null) {
+      return;
+    }
+
+    onRenameCovenantPreset(preset.id, nextPresetName.trim() || preset.name);
+  }
+
+  function handleDeletePreset(presetId: string) {
+    setOpenedPresetMenuId(null);
+    setActivePresetId((currentPresetId) =>
+      currentPresetId === presetId ? null : currentPresetId,
+    );
+    setEditingPresetId((currentPresetId) =>
+      currentPresetId === presetId ? null : currentPresetId,
+    );
+    onDeleteCovenantPreset(presetId);
+  }
+
   function renderCovenantChip(
     covenantId: string,
     covenantName: string,
@@ -58,10 +239,12 @@ export function StrategyBoardFilters({
           styles.covenantChip,
           isPrimary ? styles.covenantChipPrimary : styles.covenantChipSecondary,
           isSelected && styles.covenantChipSelected,
+          areCovenantFiltersLocked && styles.covenantChipLocked,
           !isSelected && isRecommended && styles.covenantChipRecommended,
         )}
         aria-pressed={isSelected}
         title={title}
+        disabled={areCovenantFiltersLocked}
         onClick={() => onToggleCovenant(covenantId, selectableStages)}
       >
         <span className={styles.covenantChipContent}>{covenantName}</span>
@@ -117,6 +300,114 @@ export function StrategyBoardFilters({
       <div className={styles.filterMain}>
         <div className={styles.filterHeader}>
           <h2 className={styles.filterTitle}>盟约筛选</h2>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <div className={styles.filterLabelRow}>
+            <span className={styles.filterLabel}>预设组合</span>
+            <span className={styles.filterHint}>
+              点击应用到下方主次盟约；悬浮可查看具体人数
+            </span>
+          </div>
+          <div className={styles.presetRow}>
+            <button
+              type="button"
+              className={clsx(
+                styles.covenantChip,
+                styles.levelChip,
+                styles.presetSaveButton,
+                canSavePreset && styles.presetSaveButtonActive,
+              )}
+              onClick={handleSavePreset}
+              disabled={isSaveButtonDisabled}
+              title={
+                editingPreset !== null
+                  ? canSavePreset
+                    ? `把当前主次盟约修改应用到 ${editingPreset.name}`
+                    : `请先选择主次盟约后再应用 ${editingPreset.name} 的修改`
+                  : activePresetId !== null
+                    ? '当前组合已选中，点击该组合取消选中后才能继续保存'
+                  : canSavePreset
+                  ? `保存当前组合，默认名称为 ${defaultPresetName}`
+                  : '请先选择主次盟约后再保存组合'
+              }
+            >
+              <span aria-hidden="true" className={styles.presetSaveIcon}>
+                {editingPreset !== null ? '✓' : '+'}
+              </span>
+              {editingPreset !== null ? '应用修改' : '保存当前组合'}
+            </button>
+
+            {covenantPresets.map((preset) => {
+              const isActive = activePresetId === preset.id;
+
+              return (
+                <div key={preset.id} className={styles.presetChipGroup}>
+                  <button
+                    type="button"
+                    className={clsx(
+                      styles.covenantChip,
+                      styles.presetChip,
+                      isActive && styles.presetChipActive,
+                      isActive && styles.covenantChipSelected,
+                    )}
+                    aria-pressed={isActive}
+                    title={buildPresetTitle(preset)}
+                    onClick={() => handleApplyPreset(preset.id)}
+                  >
+                    <span className={styles.covenantChipContent}>{preset.name}</span>
+                  </button>
+                  <div className={styles.presetMenuSlot}>
+                    <button
+                      type="button"
+                      className={styles.presetMenuButton}
+                      aria-label={`预设组合操作 ${preset.name}`}
+                      aria-expanded={openedPresetMenuId === preset.id}
+                      title={`预设组合操作 ${preset.name}`}
+                      onClick={() =>
+                        setOpenedPresetMenuId((currentId) =>
+                          currentId === preset.id ? null : preset.id,
+                        )
+                      }
+                    >
+                      ...
+                    </button>
+                    {openedPresetMenuId === preset.id ? (
+                      <div className={styles.presetMenuPanel}>
+                        <button
+                          type="button"
+                          className={styles.presetMenuItem}
+                          aria-label={`修改预设组合 ${preset.name}`}
+                          onClick={() => handleEditPreset(preset.id)}
+                        >
+                          修改
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.presetMenuItem}
+                          aria-label={`重命名预设组合 ${preset.name}`}
+                          onClick={() => handleRenamePreset(preset)}
+                        >
+                          重命名
+                        </button>
+                        <button
+                          type="button"
+                          className={clsx(
+                            styles.presetMenuItem,
+                            styles.presetMenuItemDanger,
+                          )}
+                          aria-label={`删除预设组合 ${preset.name}`}
+                          onClick={() => handleDeletePreset(preset.id)}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className={styles.filterGroup}>
@@ -183,7 +474,14 @@ export function StrategyBoardFilters({
 
         {selectedCovenantIds.length > 0 ? (
           <div className={styles.filterActions}>
-            <button className={styles.resetButton} type="button" onClick={onReset}>
+            <button
+              className={styles.resetButton}
+              type="button"
+              onClick={() => {
+                clearPresetState();
+                onReset();
+              }}
+            >
               重置筛选
             </button>
           </div>
