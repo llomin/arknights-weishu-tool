@@ -506,6 +506,12 @@
   margin: 0 auto;
 }
 
+.recommendationLineupGrid > .operatorCard,
+.recommendationLineupGrid > .recommendationPrimaryOperatorCard {
+  flex: 0 0 min(178px, calc(100vw - 44px));
+  width: min(178px, calc(100vw - 44px));
+}
+
 .recommendationPlaceholder {
   flex: 0 0 min(178px, calc(100vw - 44px));
   display: grid;
@@ -932,6 +938,8 @@
 .operatorCard {
   --tier-fg: var(--text-primary);
   --tier-border: var(--border-primary);
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-rows: 28px minmax(0, 1fr);
   width: 100%;
@@ -953,6 +961,11 @@
     filter 180ms ease;
 }
 
+.operatorCard > * {
+  position: relative;
+  z-index: 1;
+}
+
 .operatorCard:hover {
   transform: translateY(-1px);
   box-shadow:
@@ -963,6 +976,20 @@
 .operatorCardPicked {
   opacity: 0.55;
   filter: grayscale(0.9);
+}
+
+.recommendationPrimaryOperatorCard {
+  position: relative;
+  isolation: isolate;
+}
+
+.recommendationPrimaryOperatorCard::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  background: rgba(254, 224, 114, 0.68);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .operatorTopRow {
@@ -1279,6 +1306,17 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
+}
+
+.matchedCovenantChipHighlighted {
+  border-color: rgba(46, 58, 85, 0.32);
+  background: linear-gradient(
+    180deg,
+    rgba(46, 58, 85, 0.92) 0%,
+    rgba(68, 85, 121, 0.94) 100%
+  );
+  color: #f7f8fb;
+  box-shadow: 0 6px 12px rgba(46, 58, 85, 0.14);
 }
 
 .descriptionHighlight {

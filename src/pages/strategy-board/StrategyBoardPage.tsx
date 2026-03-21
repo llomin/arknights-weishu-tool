@@ -95,6 +95,9 @@ export function StrategyBoardPage() {
   const deferredSearchKeyword = useDeferredValue(searchKeyword);
   const searchKeywords = getSearchKeywords(deferredSearchKeyword);
   const selectedCovenantIdSet = new Set(selectedCovenantIds);
+  const selectedPrimaryCovenantIdSet = new Set(
+    selectedCovenantIds.filter((covenantId) => covenantMap[covenantId]?.isPrimary),
+  );
   const visibleOperators = filterOperators(
     operators,
     selectedCovenantIds,
@@ -244,12 +247,18 @@ export function StrategyBoardPage() {
     );
   }
 
-  function isMultiHitOperator(operator: OperatorEntity) {
+  function hasMatchedPrimarySelectedCovenant(operator: OperatorEntity) {
+    return operator.covenants.some((covenantId) =>
+      selectedPrimaryCovenantIdSet.has(covenantId),
+    );
+  }
+
+  function isMultiHitSelectedOperator(operator: OperatorEntity) {
     return getMatchedSelectedCovenants(operator).length >= 2;
   }
 
   function isPriorityOperator(operator: OperatorEntity) {
-    return !isMultiHitOperator(operator) && highPriorityBuckets.has(operator.priorityBucket);
+    return highPriorityBuckets.has(operator.priorityBucket);
   }
 
   function buildSectionGroups(
@@ -261,6 +270,20 @@ export function StrategyBoardPage() {
         operators: group.operators.filter(predicate),
       }))
       .filter((group) => group.operators.length > 0);
+  }
+
+  function sortGroupsWithPrimaryFirst(sectionGroups: OperatorGroupView[]) {
+    return sectionGroups
+      .map((group, index) => ({
+        group,
+        index,
+        isPrimary: covenantMap[group.covenantId]?.isPrimary ?? false,
+      }))
+      .sort(
+        (left, right) =>
+          Number(right.isPrimary) - Number(left.isPrimary) || left.index - right.index,
+      )
+      .map(({ group }) => group);
   }
 
   function getUniqueOperatorCount(sectionGroups: OperatorGroupView[]) {
@@ -278,6 +301,21 @@ export function StrategyBoardPage() {
       .filter((row) => row.operators.length > 0);
   }
 
+  function compareRecommendedOperatorsForDisplay(
+    left: OperatorEntity,
+    right: OperatorEntity,
+  ) {
+    return (
+      Number(hasMatchedPrimarySelectedCovenant(right)) -
+        Number(hasMatchedPrimarySelectedCovenant(left)) ||
+      Number(isMultiHitSelectedOperator(right)) -
+        Number(isMultiHitSelectedOperator(left)) ||
+      right.tier - left.tier ||
+      left.priorityWeight - right.priorityWeight ||
+      left.name.localeCompare(right.name, 'zh-Hans-CN')
+    );
+  }
+
   function renderOperatorCard(
     covenantId: string,
     operator: OperatorEntity,
@@ -286,10 +324,25 @@ export function StrategyBoardPage() {
   ) {
     const isPicked = pickedOperatorIdSet.has(operator.id);
     const isRecommendedCard = covenantId === 'recommended';
+    const isRecommendedPrimaryOperatorCard =
+      isRecommendedCard && hasMatchedPrimarySelectedCovenant(operator);
     const matchedSelectedCovenants = getMatchedSelectedCovenants(operator);
     const visibleCovenants = isRecommendedCard
       ? operator.covenants
-      : matchedSelectedCovenants;
+      : selectedCovenantIdSet.has(covenantId)
+        ? matchedSelectedCovenants.filter(
+            (matchedCovenantId) => matchedCovenantId !== covenantId,
+          )
+        : matchedSelectedCovenants.length >= 2
+          ? matchedSelectedCovenants
+          : [];
+    const highlightedCovenantIdSet = isRecommendedCard
+      ? new Set(
+          visibleCovenants.filter((visibleCovenantId) =>
+            selectedCovenantIdSet.has(visibleCovenantId),
+          ),
+        )
+      : new Set<string>();
     const traitTagSet = new Set(
       operator.traitTags.map((tag) => tag.toLocaleLowerCase('zh-CN')),
     );
@@ -301,10 +354,10 @@ export function StrategyBoardPage() {
       operator.description,
       highlightKeywords,
     );
-
-    return (
+    const operatorCardKey = `${covenantId}-${operator.id}`;
+    const card = (
       <article
-        key={`${covenantId}-${operator.id}`}
+        key={operatorCardKey}
         className={clsx(
           styles.operatorCard,
           tierClassNameMap[operator.tier],
@@ -360,15 +413,15 @@ export function StrategyBoardPage() {
         </div>
 
         <div className={styles.operatorDescription}>
-          {(isRecommendedCard || matchedSelectedCovenants.length >= 2) &&
-          visibleCovenants.length > 0 ? (
+          {visibleCovenants.length > 0 ? (
             <div className={styles.matchedCovenants}>
-              {!isRecommendedCard ? (
-                <span className={styles.matchedCovenantsLabel}>命中盟约</span>
-              ) : null}
               {visibleCovenants.map((covenantId) => (
                 <span
-                  className={styles.matchedCovenantChip}
+                  className={clsx(
+                    styles.matchedCovenantChip,
+                    highlightedCovenantIdSet.has(covenantId) &&
+                      styles.matchedCovenantChipHighlighted,
+                  )}
                   key={`${operator.id}-${covenantId}`}
                 >
                   {covenantId}
@@ -411,6 +464,19 @@ export function StrategyBoardPage() {
         </div>
       </article>
     );
+
+    if (isRecommendedPrimaryOperatorCard) {
+      return (
+        <div
+          key={operatorCardKey}
+          className={styles.recommendationPrimaryOperatorCard}
+        >
+          {card}
+        </div>
+      );
+    }
+
+    return card;
   }
 
   function renderOperatorGrid(covenantId: string, operatorList: OperatorEntity[]) {
@@ -511,10 +577,7 @@ export function StrategyBoardPage() {
     const hasRemovedPanel = removedOperators.length > 0;
     const isImpossible = recommendedLineup.reason !== null;
     const sortedRecommendedOperators = [...recommendedLineup.operators].sort(
-      (left, right) =>
-        right.tier - left.tier ||
-        left.priorityWeight - right.priorityWeight ||
-        left.name.localeCompare(right.name, 'zh-Hans-CN'),
+      compareRecommendedOperatorsForDisplay,
     );
 
     return (
@@ -767,39 +830,15 @@ export function StrategyBoardPage() {
       ) : (
         <section className={styles.groupStack}>
           {(() => {
-            const multiHitOperators = visibleOperators.filter(isMultiHitOperator);
-            const priorityGroups = buildSectionGroups(isPriorityOperator);
+            const priorityGroups = sortGroupsWithPrimaryFirst(
+              buildSectionGroups(isPriorityOperator),
+            );
             const otherGroups = buildSectionGroups(
-              (operator) => !isMultiHitOperator(operator) && !isPriorityOperator(operator),
+              (operator) => !isPriorityOperator(operator),
             );
 
             return (
               <>
-                {/* {multiHitOperators.length > 0 ? (
-                  <section
-                    className={clsx(
-                      styles.prioritySection,
-                      styles.prioritySectionMultiHit,
-                    )}
-                  >
-                    <header className={styles.prioritySectionHeader}>
-                      <div className={styles.prioritySectionHeading}>
-                        <h2 className={styles.prioritySectionTitle}>多盟约命中</h2>
-                        <p className={styles.prioritySectionHint}>
-                          同时命中多个已选盟约，先看这批联动牌
-                        </p>
-                      </div>
-                      <div className={styles.groupMeta}>
-                        <span className={styles.groupMetaItem}>
-                          {multiHitOperators.length} 名干员
-                        </span>
-                      </div>
-                    </header>
-
-                    {renderOperatorGrid('multi-hit', multiHitOperators)}
-                  </section>
-                ) : null} */}
-
                 {priorityGroups.length > 0 ? (
                   <section
                     className={clsx(
