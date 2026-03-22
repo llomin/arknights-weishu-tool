@@ -1,7 +1,30 @@
 .page {
+  --strategy-card-width: 178px;
+  --strategy-card-gap: 10px;
+  --strategy-card-padding-block: 10px;
+  --strategy-card-padding-inline: 12px;
+  --strategy-card-top-row-height: 28px;
+  --strategy-card-name-font-size: 15px;
+  --strategy-card-description-gap: 10px;
+  --strategy-card-description-font-size: 11px;
+  --strategy-card-placeholder-min-height: 118px;
   width: min(1480px, calc(100% - 24px));
   margin: 0 auto;
   padding: 20px 0 40px;
+}
+
+.searchResultSection,
+.recommendationSection,
+.groupPanel {
+  --strategy-card-width: 178px;
+  --strategy-card-gap: 10px;
+  --strategy-card-padding-block: 10px;
+  --strategy-card-padding-inline: 12px;
+  --strategy-card-top-row-height: 28px;
+  --strategy-card-name-font-size: 15px;
+  --strategy-card-description-gap: 10px;
+  --strategy-card-description-font-size: 11px;
+  --strategy-card-placeholder-min-height: 118px;
 }
 
 .header {
@@ -732,7 +755,7 @@
 .recommendationLineupGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--strategy-card-gap);
   justify-content: center;
   max-width: 742px;
   margin: 0 auto;
@@ -740,17 +763,17 @@
 
 .recommendationLineupGrid > .operatorCard,
 .recommendationLineupGrid > .recommendationPrimaryOperatorCard {
-  flex: 0 0 min(178px, calc(100vw - 44px));
-  width: min(178px, calc(100vw - 44px));
+  flex: 0 0 min(var(--strategy-card-width), calc(100vw - 44px));
+  width: min(var(--strategy-card-width), calc(100vw - 44px));
 }
 
 .recommendationPlaceholder {
-  flex: 0 0 min(178px, calc(100vw - 44px));
+  flex: 0 0 min(var(--strategy-card-width), calc(100vw - 44px));
   display: grid;
   gap: 6px;
   place-content: center;
-  width: min(178px, calc(100vw - 44px));
-  min-height: 118px;
+  width: min(var(--strategy-card-width), calc(100vw - 44px));
+  min-height: var(--strategy-card-placeholder-min-height);
   border: 2px dashed rgba(103, 128, 114, 0.38);
   border-radius: 14px;
   background:
@@ -1140,7 +1163,7 @@
 
 .operatorRowCards {
   display: flex;
-  gap: 10px;
+  gap: var(--strategy-card-gap);
   overflow-x: auto;
   padding-bottom: 4px;
   scrollbar-width: thin;
@@ -1161,8 +1184,8 @@
 }
 
 .operatorRowCards > .operatorCard {
-  flex: 0 0 min(178px, calc(100vw - 44px));
-  width: min(178px, calc(100vw - 44px));
+  flex: 0 0 min(var(--strategy-card-width), calc(100vw - 44px));
+  width: min(var(--strategy-card-width), calc(100vw - 44px));
 }
 
 .operatorCard {
@@ -1171,12 +1194,12 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-rows: 28px minmax(0, 1fr);
+  grid-template-rows: var(--strategy-card-top-row-height) minmax(0, 1fr);
   width: 100%;
-  max-width: 178px;
+  max-width: var(--strategy-card-width);
   height: fit-content;
   gap: 8px;
-  padding: 10px 12px;
+  padding: var(--strategy-card-padding-block) var(--strategy-card-padding-inline);
   border: 1px solid var(--tier-border);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.92);
@@ -1225,7 +1248,7 @@
 
 .operatorTopRow {
   display: flex;
-  height: 28px;
+  height: var(--strategy-card-top-row-height);
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -1255,7 +1278,7 @@
   min-width: 0;
   max-width: 100%;
   color: var(--tier-fg);
-  font-size: 15px;
+  font-size: var(--strategy-card-name-font-size);
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
@@ -1397,11 +1420,11 @@
 
 .operatorDescription {
   display: grid;
-  gap: 10px;
+  gap: var(--strategy-card-description-gap);
   align-content: start;
   align-self: stretch;
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: var(--strategy-card-description-font-size);
   line-height: 1.42;
   word-break: break-word;
 }
@@ -1660,6 +1683,21 @@
 }
 
 @media (max-width: 720px) {
+  .page,
+  .searchResultSection,
+  .recommendationSection,
+  .groupPanel {
+    --strategy-card-width: 150px;
+    --strategy-card-gap: 8px;
+    --strategy-card-padding-block: 9px;
+    --strategy-card-padding-inline: 10px;
+    --strategy-card-top-row-height: 26px;
+    --strategy-card-name-font-size: 14px;
+    --strategy-card-description-gap: 8px;
+    --strategy-card-description-font-size: 10px;
+    --strategy-card-placeholder-min-height: 104px;
+  }
+
   .page {
     width: min(100%, calc(100% - 16px));
     padding-top: 14px;
@@ -1709,7 +1747,20 @@
   }
 
   .recommendationLineupGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: var(--strategy-card-gap);
+    align-items: start;
+    justify-content: stretch;
     max-width: none;
+  }
+
+  .recommendationLineupGrid > .operatorCard,
+  .recommendationLineupGrid > .recommendationPrimaryOperatorCard,
+  .recommendationPlaceholder {
+    min-width: 0;
+    width: 100%;
   }
 
   .operatorCategoryRow {

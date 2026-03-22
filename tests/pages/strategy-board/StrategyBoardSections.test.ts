@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { createElement } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -24,7 +26,29 @@ function createEmptyRecommendedLineup(): RecommendedLineupResult {
   };
 }
 
+function readStrategyBoardPageCss() {
+  return readFileSync(
+    resolve(process.cwd(), 'src/pages/strategy-board/StrategyBoardPage.module.css'),
+    'utf8',
+  );
+}
+
 describe('StrategyBoard sections', () => {
+  it('uses a two-column mobile recommendation grid and smaller card metrics', () => {
+    const css = readStrategyBoardPageCss();
+
+    expect(css).toMatch(/--strategy-card-width:\s*178px;/);
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*--strategy-card-width:\s*150px;/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationLineupGrid\s*\{[\s\S]*display:\s*grid;[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationLineupGrid > \.operatorCard,[\s\S]*width:\s*100%;/,
+    );
+  });
+
   it('calls the search callback when the header input changes', () => {
     const onSearchKeywordChange = vi.fn();
 
