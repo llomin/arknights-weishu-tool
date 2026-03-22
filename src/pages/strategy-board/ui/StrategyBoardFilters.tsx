@@ -427,7 +427,9 @@ export function StrategyBoardFilters({
                 styles.covenantChip,
                 styles.levelChip,
                 styles.presetSaveButton,
-                canSavePreset && styles.presetSaveButtonActive,
+                canSavePreset &&
+                  !isSaveButtonDisabled &&
+                  styles.presetSaveButtonActive,
               )}
               onClick={handleSavePreset}
               disabled={isSaveButtonDisabled}

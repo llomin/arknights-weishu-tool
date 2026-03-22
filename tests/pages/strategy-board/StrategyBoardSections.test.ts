@@ -169,6 +169,7 @@ describe('StrategyBoard sections', () => {
 
     expect(onApplyCovenantPreset).toHaveBeenCalledWith('preset-1');
     expect(saveButton).toBeDisabled();
+    expect(saveButton).not.toHaveClass(presetSaveButtonActiveClassName);
     expect(presetButton).toHaveClass(presetChipActiveClassName);
     expect(screen.getByRole('button', { name: '炎 6人' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '炎 6人' })).toHaveClass(
