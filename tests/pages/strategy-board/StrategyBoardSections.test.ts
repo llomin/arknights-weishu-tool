@@ -34,18 +34,21 @@ function readStrategyBoardPageCss() {
 }
 
 describe('StrategyBoard sections', () => {
-  it('uses a two-column mobile recommendation grid and smaller card metrics', () => {
+  it('uses an auto-fit mobile recommendation grid with bounded card width', () => {
     const css = readStrategyBoardPageCss();
 
     expect(css).toMatch(/--strategy-card-width:\s*178px;/);
     expect(css).toMatch(
-      /@media \(max-width: 720px\)\s*\{[\s\S]*--strategy-card-width:\s*150px;/,
+      /@media \(max-width: 720px\)\s*\{[\s\S]*--strategy-card-width:\s*178px;/,
     );
     expect(css).toMatch(
       /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationLineupGrid\s*\{[\s\S]*display:\s*grid;[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationLineupGrid > \.operatorCard,[\s\S]*width:\s*100%;/,
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationLineupGrid\s*\{[\s\S]*justify-items:\s*center;/,
+    );
+    expect(css).toMatch(
+      /@media \(min-width: 590px\) and \(max-width: 720px\)\s*\{[\s\S]*\.recommendationLineupGrid\s*\{[\s\S]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*var\(--strategy-card-width\)\)\);/,
     );
   });
 

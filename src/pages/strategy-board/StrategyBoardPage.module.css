@@ -1687,7 +1687,7 @@
   .searchResultSection,
   .recommendationSection,
   .groupPanel {
-    --strategy-card-width: 150px;
+    --strategy-card-width: 178px;
     --strategy-card-gap: 8px;
     --strategy-card-padding-block: 9px;
     --strategy-card-padding-inline: 10px;
@@ -1749,10 +1749,10 @@
   .recommendationLineupGrid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
+    width: fit-content;
     gap: var(--strategy-card-gap);
     align-items: start;
-    justify-content: stretch;
+    justify-items: center;
     max-width: none;
   }
 
@@ -1778,7 +1778,15 @@
   }
 
   .operatorCard {
-    max-width: none;
+    max-width: var(--strategy-card-width);
+  }
+}
+
+@media (min-width: 590px) and (max-width: 720px) {
+  .recommendationLineupGrid {
+    grid-template-columns: repeat(3, minmax(0, var(--strategy-card-width)));
+    justify-content: center;
+    justify-items: stretch;
   }
 }
 
