@@ -1235,6 +1235,7 @@
 .recommendationPrimaryOperatorCard {
   position: relative;
   isolation: isolate;
+  align-self: stretch;
 }
 
 .recommendationPrimaryOperatorCard::before {
