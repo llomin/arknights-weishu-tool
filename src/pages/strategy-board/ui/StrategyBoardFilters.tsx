@@ -453,9 +453,16 @@ export function StrategyBoardFilters({
 
             {covenantPresets.map((preset) => {
               const isActive = activePresetId === preset.id;
+              const isPresetMenuOpen = openedPresetMenuId === preset.id;
 
               return (
-                <div key={preset.id} className={styles.presetChipGroup}>
+                <div
+                  key={preset.id}
+                  className={clsx(
+                    styles.presetChipGroup,
+                    isPresetMenuOpen && styles.presetChipGroupMenuVisible,
+                  )}
+                >
                   <button
                     type="button"
                     className={clsx(
@@ -473,9 +480,12 @@ export function StrategyBoardFilters({
                   <div className={styles.presetMenuSlot}>
                     <button
                       type="button"
-                      className={styles.presetMenuButton}
+                      className={clsx(
+                        styles.presetMenuButton,
+                        isActive && styles.presetMenuButtonActive,
+                      )}
                       aria-label={`预设组合操作 ${preset.name}`}
-                      aria-expanded={openedPresetMenuId === preset.id}
+                      aria-expanded={isPresetMenuOpen}
                       title={`预设组合操作 ${preset.name}`}
                       onClick={() =>
                         setOpenedPresetMenuId((currentId) =>

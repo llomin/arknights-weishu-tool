@@ -52,6 +52,46 @@ describe('StrategyBoard sections', () => {
     );
   });
 
+  it('uses a lighter active tone for the preset menu button', () => {
+    const css = readStrategyBoardPageCss();
+
+    expect(css).toMatch(
+      /\.presetMenuButtonActive\s*\{[\s\S]*border-color:\s*rgba\(31,\s*127,\s*73,\s*0\.26\);[\s\S]*background:\s*linear-gradient\(180deg,\s*rgba\(236,\s*255,\s*243,\s*0\.98\)\s*0%,\s*rgba\(204,\s*243,\s*220,\s*0\.98\)\s*100%\);[\s\S]*color:\s*#2b6a49;/,
+    );
+    expect(css).toMatch(
+      /\.presetMenuButtonActive:hover\s*\{[\s\S]*border-color:\s*rgba\(31,\s*127,\s*73,\s*0\.34\);[\s\S]*background:\s*linear-gradient\(180deg,\s*rgba\(242,\s*255,\s*247,\s*0\.98\)\s*0%,\s*rgba\(217,\s*248,\s*229,\s*0\.98\)\s*100%\);[\s\S]*color:\s*#23563b;/,
+    );
+  });
+
+  it('collapses the preset menu button until the preset chip group is hovered, focused, open, or on devices without hover', () => {
+    const css = readStrategyBoardPageCss();
+
+    expect(css).toMatch(
+      /\.presetMenuSlot\s*\{[\s\S]*width:\s*0;[\s\S]*overflow:\s*hidden;[\s\S]*pointer-events:\s*none;[\s\S]*transition:\s*width 180ms ease;/,
+    );
+    expect(css).toMatch(
+      /\.presetChip\s*\{[\s\S]*border-right-color:\s*rgba\(88,\s*104,\s*134,\s*0\.14\);[\s\S]*transition:[\s\S]*border-right-color 180ms ease[\s\S]*border-radius 180ms ease;/,
+    );
+    expect(css).toMatch(
+      /\.presetChipActive\s*\{[\s\S]*border-right-color:\s*rgba\(31,\s*127,\s*73,\s*0\.34\);/,
+    );
+    expect(css).toMatch(
+      /\.presetChipGroup:hover \.presetChip,\s*\.presetChipGroup:has\(:focus-visible\) \.presetChip,\s*\.presetChipGroupMenuVisible \.presetChip\s*\{[\s\S]*border-right-color:\s*transparent;[\s\S]*border-radius:\s*10px 0 0 10px;/,
+    );
+    expect(css).toMatch(
+      /\.presetChipGroup:hover \.presetMenuSlot,\s*\.presetChipGroup:has\(:focus-visible\) \.presetMenuSlot,\s*\.presetChipGroupMenuVisible \.presetMenuSlot\s*\{[\s\S]*width:\s*34px;[\s\S]*pointer-events:\s*auto;/,
+    );
+    expect(css).toMatch(
+      /\.presetChipGroupMenuVisible \.presetMenuSlot\s*\{[\s\S]*overflow:\s*visible;/,
+    );
+    expect(css).toMatch(
+      /\.presetChipGroup:hover \.presetMenuButton,\s*\.presetChipGroup:has\(:focus-visible\) \.presetMenuButton,\s*\.presetChipGroupMenuVisible \.presetMenuButton\s*\{[\s\S]*opacity:\s*1;[\s\S]*transform:\s*translateX\(0\);/,
+    );
+    expect(css).toMatch(
+      /@media \(hover: none\)\s*\{[\s\S]*\.presetChip\s*\{[\s\S]*border-right-color:\s*transparent;[\s\S]*border-radius:\s*10px 0 0 10px;[\s\S]*}\s*[\s\S]*\.presetMenuSlot\s*\{[\s\S]*width:\s*34px;[\s\S]*pointer-events:\s*auto;[\s\S]*}\s*[\s\S]*\.presetMenuButton\s*\{[\s\S]*opacity:\s*1;[\s\S]*transform:\s*translateX\(0\);/,
+    );
+  });
+
   it('calls the search callback when the header input changes', () => {
     const onSearchKeywordChange = vi.fn();
 
@@ -139,13 +179,19 @@ describe('StrategyBoard sections', () => {
     const presetSaveButtonClassName = styles.presetSaveButton;
     const presetSaveButtonActiveClassName = styles.presetSaveButtonActive;
     const presetChipActiveClassName = styles.presetChipActive;
+    const presetChipGroupMenuVisibleClassName = styles.presetChipGroupMenuVisible;
+    const presetMenuButtonActiveClassName = styles.presetMenuButtonActive;
     const covenantChipLockedClassName = styles.covenantChipLocked;
+    const presetChipGroup = presetButton.closest(`.${styles.presetChipGroup}`);
 
     if (
       !presetSaveButtonClassName ||
       !presetSaveButtonActiveClassName ||
       !presetChipActiveClassName ||
-      !covenantChipLockedClassName
+      !presetChipGroupMenuVisibleClassName ||
+      !presetMenuButtonActiveClassName ||
+      !covenantChipLockedClassName ||
+      !(presetChipGroup instanceof HTMLElement)
     ) {
       throw new Error('预设组合样式类缺失');
     }
@@ -153,6 +199,7 @@ describe('StrategyBoard sections', () => {
     expect(saveButton).toHaveClass(presetSaveButtonClassName);
     expect(saveButton).toHaveClass(presetSaveButtonActiveClassName);
     expect(saveButton).toHaveTextContent('+');
+    expect(presetChipGroup).not.toHaveClass(presetChipGroupMenuVisibleClassName);
     expect(screen.getByRole('button', { name: clickableCovenant.name })).toBeInTheDocument();
 
     expect(presetButton).toHaveAttribute(
@@ -171,6 +218,7 @@ describe('StrategyBoard sections', () => {
     expect(saveButton).toBeDisabled();
     expect(saveButton).not.toHaveClass(presetSaveButtonActiveClassName);
     expect(presetButton).toHaveClass(presetChipActiveClassName);
+    expect(presetMenuButton).toHaveClass(presetMenuButtonActiveClassName);
     expect(screen.getByRole('button', { name: '炎 6人' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '炎 6人' })).toHaveClass(
       covenantChipLockedClassName,
@@ -186,15 +234,18 @@ describe('StrategyBoard sections', () => {
 
     expect(saveButton).not.toBeDisabled();
     expect(presetButton).not.toHaveClass(presetChipActiveClassName);
+    expect(presetMenuButton).not.toHaveClass(presetMenuButtonActiveClassName);
     expect(screen.getByRole('button', { name: clickableCovenant.name })).not.toBeDisabled();
     expect(screen.getByRole('button', { name: clickableCovenant.name })).not.toHaveClass(
       covenantChipLockedClassName,
     );
+    expect(presetChipGroup).not.toHaveClass(presetChipGroupMenuVisibleClassName);
 
     expect(
       screen.queryByRole('button', { name: '修改预设组合 炎突组合' }),
     ).not.toBeInTheDocument();
     fireEvent.click(presetMenuButton);
+    expect(presetChipGroup).toHaveClass(presetChipGroupMenuVisibleClassName);
     fireEvent.click(screen.getByRole('button', { name: '修改预设组合 炎突组合' }));
 
     expect(saveButton).toHaveTextContent('应用修改');
