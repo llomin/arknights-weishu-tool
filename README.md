@@ -4,7 +4,7 @@
   <p>一个面向《明日方舟》“卫戍协议”模式的盟约筛选与抓牌辅助工具。</p>
   <p>打开即用，优先推荐直接访问在线版。</p>
   <p>
-    <a href="https://arknights-weishu-tool.vercel.app/"><strong>在线体验</strong></a>
+    <a href="https://arknights-weishu-tool.llomin.top"><strong>在线体验</strong></a>
   </p>
   <p>
     <img alt="React 19" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
