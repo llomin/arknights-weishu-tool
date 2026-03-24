@@ -1,4 +1,5 @@
 import { startTransition } from 'react';
+import { operatorMap } from '@/entities/operator/model/normalizeOperators';
 import { useStrategyStore } from '@/features/strategy/model/useStrategyStore';
 import { useStrategyBoardViewModel } from '@/pages/strategy-board/model/useStrategyBoardViewModel';
 import styles from './StrategyBoardPage.module.css';
@@ -42,7 +43,6 @@ export function StrategyBoardPage() {
   const setMaxPopulation = useStrategyStore((state) => state.setMaxPopulation);
   const toggleCovenant = useStrategyStore((state) => state.toggleCovenant);
   const toggleCurrentLevel = useStrategyStore((state) => state.toggleCurrentLevel);
-  const toggleOperator = useStrategyStore((state) => state.toggleOperator);
   const toggleRemovedOperator = useStrategyStore(
     (state) => state.toggleRemovedOperator,
   );
@@ -73,6 +73,15 @@ export function StrategyBoardPage() {
     removedOperatorIds,
   });
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
+  const openOperatorWiki = (operatorId: string) => {
+    const operatorName = operatorMap[operatorId]?.name ?? operatorId;
+
+    window.open(
+      `https://prts.wiki/w/${encodeURIComponent(operatorName)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  };
 
   return (
     <main className={styles.page}>
@@ -91,7 +100,7 @@ export function StrategyBoardPage() {
         pickedOperatorIdSet={pickedOperatorIdSet}
         selectedCovenantIdSet={selectedCovenantIdSet}
         selectedPrimaryCovenantIdSet={selectedPrimaryCovenantIdSet}
-        onToggleOperator={toggleOperator}
+        onToggleOperator={openOperatorWiki}
         onToggleRemovedOperator={toggleRemovedOperator}
       />
 
@@ -124,7 +133,7 @@ export function StrategyBoardPage() {
         selectedCovenantIdSet={selectedCovenantIdSet}
         selectedPrimaryCovenantIdSet={selectedPrimaryCovenantIdSet}
         onRestoreRemovedOperators={restoreRemovedOperators}
-        onToggleOperator={toggleOperator}
+        onToggleOperator={openOperatorWiki}
         onToggleRemovedOperator={toggleRemovedOperator}
       />
 
@@ -152,7 +161,7 @@ export function StrategyBoardPage() {
             pickedOperatorIdSet={pickedOperatorIdSet}
             selectedCovenantIdSet={selectedCovenantIdSet}
             selectedPrimaryCovenantIdSet={selectedPrimaryCovenantIdSet}
-            onToggleOperator={toggleOperator}
+            onToggleOperator={openOperatorWiki}
             onToggleRemovedOperator={toggleRemovedOperator}
           />
           <StrategyBoardGroupSection
@@ -163,7 +172,7 @@ export function StrategyBoardPage() {
             pickedOperatorIdSet={pickedOperatorIdSet}
             selectedCovenantIdSet={selectedCovenantIdSet}
             selectedPrimaryCovenantIdSet={selectedPrimaryCovenantIdSet}
-            onToggleOperator={toggleOperator}
+            onToggleOperator={openOperatorWiki}
             onToggleRemovedOperator={toggleRemovedOperator}
           />
         </section>

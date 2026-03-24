@@ -433,6 +433,33 @@ describe('StrategyBoardPage', () => {
     resetStrategyStore();
   });
 
+  it('点击干员卡片时会打开对应的 PRTS 页面且不再切换已选状态', () => {
+    const { selectedCovenantIds, primaryOperator: operator } =
+      findRecommendationPrimaryPriorityScenario();
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    applyStrategyScenario(selectedCovenantIds);
+
+    render(createElement(StrategyBoardPage));
+
+    const recommendationTitle = screen.getByRole('heading', { name: '推荐阵容' });
+    const recommendationSection = recommendationTitle.closest('section');
+
+    expect(recommendationSection).not.toBeNull();
+
+    fireEvent.click(getOperatorCardByName(recommendationSection!, operator.name));
+
+    expect(openSpy).toHaveBeenCalledWith(
+      `https://prts.wiki/w/${encodeURIComponent(operator.name)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+    expect(useStrategyStore.getState().pickedOperatorIds).toEqual([]);
+
+    openSpy.mockRestore();
+  });
+
   it('在普通盟约分组中只显示额外命中的已选盟约', () => {
     const { operator, currentGroupId, extraSelectedCovenantIds } =
       setupMultiHitPriorityScenario();
