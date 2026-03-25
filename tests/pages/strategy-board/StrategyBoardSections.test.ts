@@ -557,7 +557,6 @@ describe('StrategyBoard sections', () => {
     const presetChipActiveClassName = styles.presetChipActive;
     const presetChipGroupMenuVisibleClassName = styles.presetChipGroupMenuVisible;
     const presetMenuButtonActiveClassName = styles.presetMenuButtonActive;
-    const covenantChipLockedClassName = styles.covenantChipLocked;
     const presetChipGroup = presetButton.closest(`.${styles.presetChipGroup}`);
 
     if (
@@ -566,7 +565,6 @@ describe('StrategyBoard sections', () => {
       !presetChipActiveClassName ||
       !presetChipGroupMenuVisibleClassName ||
       !presetMenuButtonActiveClassName ||
-      !covenantChipLockedClassName ||
       !(presetChipGroup instanceof HTMLElement)
     ) {
       throw new Error('预设组合样式类缺失');
@@ -599,14 +597,8 @@ describe('StrategyBoard sections', () => {
     expect(saveButton).not.toHaveClass(presetSaveButtonActiveClassName);
     expect(presetButton).toHaveClass(presetChipActiveClassName);
     expect(presetMenuButton).toHaveClass(presetMenuButtonActiveClassName);
-    expect(screen.getByRole('button', { name: '炎 6人' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '炎 6人' })).toHaveClass(
-      covenantChipLockedClassName,
-    );
-    expect(screen.getByRole('button', { name: '精准 2人' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '精准 2人' })).toHaveClass(
-      covenantChipLockedClassName,
-    );
+    expect(screen.getByRole('button', { name: '炎 6人' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: '精准 2人' })).not.toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: clickableCovenant.name }));
 
@@ -616,24 +608,10 @@ describe('StrategyBoard sections', () => {
     expect(presetButton).not.toHaveClass(presetChipActiveClassName);
     expect(presetMenuButton).not.toHaveClass(presetMenuButtonActiveClassName);
     expect(screen.getByRole('button', { name: clickableCovenant.name })).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: clickableCovenant.name })).not.toHaveClass(
-      covenantChipLockedClassName,
-    );
     expect(presetChipGroup).not.toHaveClass(presetChipGroupMenuVisibleClassName);
 
-    expect(
-      screen.queryByRole('button', { name: '修改预设组合 炎突组合' }),
-    ).not.toBeInTheDocument();
     fireEvent.click(presetMenuButton);
     expect(presetChipGroup).toHaveClass(presetChipGroupMenuVisibleClassName);
-    fireEvent.click(screen.getByRole('button', { name: '修改预设组合 炎突组合' }));
-
-    expect(saveButton).toHaveTextContent('应用修改');
-    expect(saveButton).toHaveTextContent('✓');
-
-    fireEvent.click(saveButton);
-
-    fireEvent.click(presetMenuButton);
     fireEvent.click(screen.getByRole('button', { name: '重命名预设组合 炎突组合' }));
     fireEvent.click(presetMenuButton);
     fireEvent.click(screen.getByRole('button', { name: '删除预设组合 炎突组合' }));
@@ -648,11 +626,8 @@ describe('StrategyBoard sections', () => {
       '常用组合',
       recommendedOperatorNames,
     );
-    expect(onApplyCovenantPreset).toHaveBeenCalledTimes(2);
-    expect(onUpdateCovenantPreset).toHaveBeenCalledWith(
-      'preset-1',
-      recommendedOperatorNames,
-    );
+    expect(onApplyCovenantPreset).toHaveBeenCalledTimes(1);
+    expect(onUpdateCovenantPreset).not.toHaveBeenCalled();
     expect(onRenameCovenantPreset).toHaveBeenCalledWith('preset-1', '新版组合');
     expect(onDeleteCovenantPreset).toHaveBeenCalledWith('preset-1');
     expect(onToggleCovenant).toHaveBeenCalledWith(
@@ -761,10 +736,8 @@ describe('StrategyBoard sections', () => {
     const secondaryStage =
       secondaryCovenant.activationStages[0] ?? secondaryCovenant.activationCount;
     const presetChipActiveClassName = styles.presetChipActive;
-    const covenantChipLockedClassName = styles.covenantChipLocked;
-
-    if (!presetChipActiveClassName || !covenantChipLockedClassName) {
-      throw new Error('预设组合选中态或锁定态样式类缺失');
+    if (!presetChipActiveClassName) {
+      throw new Error('预设组合选中态样式类缺失');
     }
 
     render(
@@ -812,8 +785,7 @@ describe('StrategyBoard sections', () => {
 
     expect(saveButton).toBeDisabled();
     expect(presetButton).toHaveClass(presetChipActiveClassName);
-    expect(primaryChipButton).toBeDisabled();
-    expect(primaryChipButton).toHaveClass(covenantChipLockedClassName);
+    expect(primaryChipButton).not.toBeDisabled();
 
     fireEvent.click(resetButton);
 
@@ -821,7 +793,6 @@ describe('StrategyBoard sections', () => {
     expect(saveButton).not.toBeDisabled();
     expect(presetButton).not.toHaveClass(presetChipActiveClassName);
     expect(primaryChipButton).not.toBeDisabled();
-    expect(primaryChipButton).not.toHaveClass(covenantChipLockedClassName);
   });
 
   it('renders the removed-operator panel and restore action in the recommendation section', () => {

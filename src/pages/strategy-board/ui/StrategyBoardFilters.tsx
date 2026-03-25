@@ -156,6 +156,21 @@ function matchesPresetSelection(
   );
 }
 
+function matchesPresetRecommendedOperators(
+  preset: CovenantPreset,
+  recommendedOperatorNames: string[],
+) {
+  const presetRecommendedOperatorNames = preset.recommendedOperatorNames ?? [];
+
+  if (presetRecommendedOperatorNames.length !== recommendedOperatorNames.length) {
+    return false;
+  }
+
+  return presetRecommendedOperatorNames.every(
+    (operatorName, index) => operatorName === recommendedOperatorNames[index],
+  );
+}
+
 export function StrategyBoardFilters({
   covenantPresets,
   currentLevel,
@@ -176,25 +191,28 @@ export function StrategyBoardFilters({
   selectedCovenantTargetMap,
 }: StrategyBoardFiltersProps) {
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
-  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
   const [openedPresetMenuId, setOpenedPresetMenuId] = useState<string | null>(null);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
-  const editingPreset = covenantPresets.find((preset) => preset.id === editingPresetId) ?? null;
+  const activePreset = covenantPresets.find((preset) => preset.id === activePresetId) ?? null;
   const defaultPresetName = buildDefaultPresetName(
     selectedCovenantIds,
     selectedCovenantTargetMap,
   );
   const canSavePreset = defaultPresetName.length > 0;
-  const areCovenantFiltersLocked =
-    activePresetId !== null && editingPreset === null;
+  const hasActivePresetChanges =
+    activePreset !== null &&
+    (!matchesPresetSelection(
+      activePreset,
+      selectedCovenantIds,
+      selectedCovenantTargetMap,
+    ) ||
+      !matchesPresetRecommendedOperators(activePreset, recommendedOperatorNames));
+  const isApplyingPresetChanges = activePreset !== null && hasActivePresetChanges;
   const isSaveButtonDisabled =
-    editingPreset === null
-      ? !canSavePreset || activePresetId !== null
-      : !canSavePreset;
+    activePreset === null ? !canSavePreset : !isApplyingPresetChanges || !canSavePreset;
 
   function clearPresetState() {
     setActivePresetId(null);
-    setEditingPresetId(null);
     setOpenedPresetMenuId(null);
   }
 
@@ -203,10 +221,10 @@ export function StrategyBoardFilters({
       return;
     }
 
-    if (editingPreset !== null) {
-      onUpdateCovenantPreset(editingPreset.id, recommendedOperatorNames);
-      setEditingPresetId(null);
-      setActivePresetId(editingPreset.id);
+    if (activePreset !== null) {
+      if (isApplyingPresetChanges) {
+        onUpdateCovenantPreset(activePreset.id, recommendedOperatorNames);
+      }
       return;
     }
 
@@ -231,7 +249,6 @@ export function StrategyBoardFilters({
       return;
     }
 
-    setEditingPresetId(null);
     setActivePresetId(presetId);
     setOpenedPresetMenuId(null);
     onApplyCovenantPreset(presetId);
@@ -239,7 +256,6 @@ export function StrategyBoardFilters({
 
   function handleEditPreset(presetId: string) {
     setActivePresetId(presetId);
-    setEditingPresetId(presetId);
     setOpenedPresetMenuId(null);
     onApplyCovenantPreset(presetId);
   }
@@ -262,9 +278,6 @@ export function StrategyBoardFilters({
   function handleDeletePreset(presetId: string) {
     setOpenedPresetMenuId(null);
     setActivePresetId((currentPresetId) =>
-      currentPresetId === presetId ? null : currentPresetId,
-    );
-    setEditingPresetId((currentPresetId) =>
       currentPresetId === presetId ? null : currentPresetId,
     );
     onDeleteCovenantPreset(presetId);
@@ -333,11 +346,9 @@ export function StrategyBoardFilters({
           styles.covenantChip,
           isPrimary ? styles.covenantChipPrimary : styles.covenantChipSecondary,
           isSelected && styles.covenantChipSelected,
-          areCovenantFiltersLocked && styles.covenantChipLocked,
         )}
         aria-pressed={isSelected}
         title={title}
-        disabled={areCovenantFiltersLocked}
         onClick={() => onToggleCovenant(covenantId, selectableStages)}
       >
         <span className={styles.covenantChipContent}>{covenantName}</span>
@@ -448,21 +459,21 @@ export function StrategyBoardFilters({
               onClick={handleSavePreset}
               disabled={isSaveButtonDisabled}
               title={
-                editingPreset !== null
+                isApplyingPresetChanges
                   ? canSavePreset
-                    ? `把当前主次盟约修改应用到 ${editingPreset.name}`
-                    : `请先选择主次盟约后再应用 ${editingPreset.name} 的修改`
-                  : activePresetId !== null
-                    ? '当前组合已选中，点击该组合取消选中后才能继续保存'
+                    ? `把当前主次盟约与指定干员修改应用到 ${activePreset.name}`
+                    : `请先选择主次盟约后再应用 ${activePreset.name} 的修改`
+                  : activePreset !== null
+                    ? '当前组合与已选预设一致；修改盟约或指定干员后可直接应用修改'
                   : canSavePreset
-                  ? `保存当前组合，默认名称为 ${defaultPresetName}`
-                  : '请先选择主次盟约后再保存组合'
+                    ? `保存当前组合，默认名称为 ${defaultPresetName}`
+                    : '请先选择主次盟约后再保存组合'
               }
             >
               <span aria-hidden="true" className={styles.presetSaveIcon}>
-                {editingPreset !== null ? '✓' : '+'}
+                {isApplyingPresetChanges ? '✓' : '+'}
               </span>
-              {editingPreset !== null ? '应用修改' : '保存当前组合'}
+              {isApplyingPresetChanges ? '应用修改' : '保存当前组合'}
             </button>
 
             {covenantPresets.map((preset) => {

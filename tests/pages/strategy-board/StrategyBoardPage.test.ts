@@ -1088,7 +1088,7 @@ describe('StrategyBoardPage', () => {
     );
   });
 
-  it('保存预设组合后可以恢复主次盟约筛选并支持修改、重命名和删除', () => {
+  it('保存预设组合后可以恢复主次盟约筛选，并在盟约变化后直接应用修改、重命名和删除', () => {
     const primaryCovenant =
       primaryCovenants.find((item) => item.id === '炎') ?? primaryCovenants[0];
     const secondaryCovenant =
@@ -1106,6 +1106,11 @@ describe('StrategyBoardPage', () => {
       [primaryCovenant.id]: primaryStage!,
       [secondaryCovenant.id]: secondaryStage,
     };
+    const primaryActivationStages = primaryCovenant.activationStages.filter(
+      (stage) => stage <= 9,
+    );
+    const nextPrimaryStage =
+      primaryActivationStages[primaryActivationStages.findIndex((stage) => stage === primaryStage) + 1];
     const expectedRecommendedOperatorNames = buildDisplayedRecommendedOperatorNames(
       buildRecommendedLineup(
         filterOperators(operators, selectedCovenantIds, '', [], null),
@@ -1118,6 +1123,10 @@ describe('StrategyBoardPage', () => {
       .spyOn(window, 'prompt')
       .mockReturnValueOnce('炎突组合')
       .mockReturnValueOnce('炎突改名');
+
+    if (nextPrimaryStage === undefined) {
+      throw new Error('缺少用于预设组合修改测试的下一档盟约人数');
+    }
 
     useStrategyStore.setState({
       selectedCovenantIds,
@@ -1196,34 +1205,24 @@ describe('StrategyBoardPage', () => {
       ).getByText(expectedRecommendedOperatorNames[0]!),
     ).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: '9 人' }));
     fireEvent.click(
       screen.getByRole('button', { name: `${primaryCovenant.name} ${primaryStage}人` }),
     );
 
     expect(useStrategyStore.getState().selectedCovenantTargetMap).toEqual({
-      [primaryCovenant.id]: primaryStage,
+      [primaryCovenant.id]: nextPrimaryStage,
       [secondaryCovenant.id]: secondaryStage,
     });
-
-    fireEvent.click(presetButton);
-
     expect(saveButton).not.toBeDisabled();
-
-    fireEvent.click(screen.getByRole('button', { name: '预设组合操作 炎突组合' }));
-    fireEvent.click(screen.getByRole('button', { name: '修改预设组合 炎突组合' }));
-
     expect(saveButton).toHaveTextContent('应用修改');
     expect(saveButton).toHaveTextContent('✓');
 
-    fireEvent.click(screen.getByRole('button', { name: '9 人' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: `${primaryCovenant.name} ${primaryStage}人` }),
-    );
     fireEvent.click(saveButton);
 
     expect(useStrategyStore.getState().covenantPresets[0]?.name).toBe('炎突组合');
     expect(useStrategyStore.getState().covenantPresets[0]?.selectedCovenantTargetMap).toEqual({
-      [primaryCovenant.id]: primaryCovenant.activationStages[2] ?? primaryCovenant.activationStages[1] ?? primaryStage,
+      [primaryCovenant.id]: nextPrimaryStage,
       [secondaryCovenant.id]: secondaryStage,
     });
     expect(useStrategyStore.getState().covenantPresets[0]?.recommendedOperatorNames).toEqual(
@@ -1261,6 +1260,83 @@ describe('StrategyBoardPage', () => {
     expect(
       screen.queryByRole('button', { name: '炎突改名' }),
     ).not.toBeInTheDocument();
+
+    promptSpy.mockRestore();
+  });
+
+  it('选中预设后修改推荐干员时，保存按钮会切换为应用修改并直接更新预设', () => {
+    const { replacementOperator, selectedCovenantIds, targetOperator } =
+      findRecommendationCustomizationScenario();
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValueOnce('可改推荐组合');
+
+    useStrategyStore.setState({
+      selectedCovenantIds,
+      selectedCovenantTargetMap: buildSelectedCovenantTargetMap(selectedCovenantIds, 9),
+      maxPopulation: 9,
+      currentLevel: null,
+      searchKeyword: '',
+      pickedOperatorIds: [],
+      removedOperatorIds: [],
+      covenantPresets: [],
+    });
+
+    render(createElement(StrategyBoardPage));
+
+    const saveButton = screen.getByRole('button', { name: '保存当前组合' });
+
+    fireEvent.click(saveButton);
+
+    expect(useStrategyStore.getState().covenantPresets).toHaveLength(1);
+
+    const presetButton = screen.getByRole('button', { name: '可改推荐组合' });
+    const recommendationSection = screen
+      .getByRole('heading', { name: '推荐阵容' })
+      .closest('section');
+
+    expect(recommendationSection).not.toBeNull();
+
+    fireEvent.click(presetButton);
+
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.click(
+      within(recommendationSection!).getByRole('button', {
+        name: `推荐卡片操作 ${targetOperator.name}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: `替换推荐干员 ${targetOperator.name}` }),
+    );
+
+    const replaceDialog = screen.getByRole('dialog', { name: `替换 ${targetOperator.name}` });
+
+    fireEvent.change(within(replaceDialog).getByLabelText('搜索候选干员'), {
+      target: { value: replacementOperator.name },
+    });
+    fireEvent.click(
+      within(replaceDialog).getByRole('button', {
+        name: `选择 ${replacementOperator.name}`,
+      }),
+    );
+
+    expect(
+      within(recommendationSection!).queryByText(targetOperator.name),
+    ).not.toBeInTheDocument();
+    expect(
+      within(recommendationSection!).getByText(replacementOperator.name),
+    ).toBeInTheDocument();
+    expect(saveButton).not.toBeDisabled();
+    expect(saveButton).toHaveTextContent('应用修改');
+    expect(saveButton).toHaveTextContent('✓');
+
+    fireEvent.click(saveButton);
+
+    expect(useStrategyStore.getState().covenantPresets[0]?.recommendedOperatorNames).toContain(
+      replacementOperator.name,
+    );
+    expect(useStrategyStore.getState().covenantPresets[0]?.recommendedOperatorNames).not.toContain(
+      targetOperator.name,
+    );
 
     promptSpy.mockRestore();
   });
