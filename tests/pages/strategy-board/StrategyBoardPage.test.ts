@@ -15,7 +15,10 @@ import {
 } from '@/entities/covenant/model/normalizeCovenants';
 import { buildRecommendedLineup } from '@/entities/operator/model/buildRecommendedLineup';
 import { operators } from '@/entities/operator/model/normalizeOperators';
-import { filterOperators } from '@/entities/operator/model/queryOperators';
+import {
+  filterOperators,
+  matchesOperatorLevel,
+} from '@/entities/operator/model/queryOperators';
 import { useStrategyStore } from '@/features/strategy/model/useStrategyStore';
 import { StrategyBoardPage } from '@/pages/strategy-board/StrategyBoardPage';
 import styles from '@/pages/strategy-board/StrategyBoardPage.module.css';
@@ -34,6 +37,8 @@ function resetStrategyStore() {
     searchKeyword: '',
     pickedOperatorIds: [],
     removedOperatorIds: [],
+    preferredRecommendedOperatorIds: [],
+    blockedRecommendedOperatorIds: [],
     favoriteOperatorIds: [],
     covenantPresets: [],
   });
@@ -97,6 +102,8 @@ function applyStrategyScenario(
     searchKeyword: '',
     pickedOperatorIds: [],
     removedOperatorIds: [],
+    preferredRecommendedOperatorIds: [],
+    blockedRecommendedOperatorIds: [],
   });
 
   return {
@@ -252,8 +259,8 @@ function compareCurrentRecommendedOperators(
   right: OperatorEntity,
 ) {
   return (
-    right.tier - left.tier ||
     left.priorityWeight - right.priorityWeight ||
+    right.tier - left.tier ||
     left.name.localeCompare(right.name, 'zh-Hans-CN')
   );
 }
@@ -323,6 +330,204 @@ function buildRecommendationSelectionCandidates() {
       selectedCovenantIds.length === 2 &&
       selectedCovenantIds.some((covenantId) => covenantMap[covenantId]?.isPrimary),
   );
+}
+
+function buildDisplayedRecommendedOperatorNames(
+  operatorsForDisplay: OperatorEntity[],
+  selectedCovenantIds: string[],
+) {
+  const selectedPrimaryCovenantIdSet = new Set(
+    selectedCovenantIds.filter((covenantId) => covenantMap[covenantId]?.isPrimary),
+  );
+
+  return [...operatorsForDisplay]
+    .sort((left, right) =>
+      compareDisplayedRecommendedOperators(
+        left,
+        right,
+        selectedCovenantIds,
+        selectedPrimaryCovenantIdSet,
+      ),
+    )
+    .map((operator) => operator.name);
+}
+
+function findRecommendationCustomizationScenario() {
+  for (const selectedCovenantIds of buildRecommendationSelectionCandidates()) {
+    const selectedCovenantTargetMap = buildSelectedCovenantTargetMap(
+      selectedCovenantIds,
+    );
+    const selectedCovenantRequirements = buildSelectedRequirements(
+      selectedCovenantIds,
+      selectedCovenantTargetMap,
+    );
+    const visibleOperators = filterOperators(
+      operators,
+      selectedCovenantIds,
+      '',
+      [],
+      null,
+    );
+    const baseRecommendedLineup = buildRecommendedLineup(
+      visibleOperators,
+      selectedCovenantRequirements,
+      defaultMaxPopulation,
+    );
+
+    if (
+      baseRecommendedLineup.reason ||
+      baseRecommendedLineup.operators.length === 0 ||
+      baseRecommendedLineup.emptySlotCount === 0
+    ) {
+      continue;
+    }
+
+    const baseRecommendedOperatorIds = new Set(
+      baseRecommendedLineup.operators.map((operator) => operator.id),
+    );
+
+    for (const targetOperator of baseRecommendedLineup.operators) {
+      const preferredWithoutTarget = baseRecommendedLineup.operators.filter(
+        (operator) => operator.id !== targetOperator.id,
+      );
+      const deleteResult = buildRecommendedLineup(
+        visibleOperators.filter((operator) => operator.id !== targetOperator.id),
+        selectedCovenantRequirements,
+        defaultMaxPopulation,
+        {
+          preferredOperators: preferredWithoutTarget,
+        },
+      );
+
+      if (
+        deleteResult.reason ||
+        deleteResult.operators.some((operator) => operator.id === targetOperator.id)
+      ) {
+        continue;
+      }
+
+      const replacementOperator = visibleOperators.find((candidateOperator) => {
+        if (baseRecommendedOperatorIds.has(candidateOperator.id)) {
+          return false;
+        }
+
+        const replaceResult = buildRecommendedLineup(
+          visibleOperators,
+          selectedCovenantRequirements,
+          defaultMaxPopulation,
+          {
+            preferredOperators: baseRecommendedLineup.operators.map((operator) =>
+              operator.id === targetOperator.id ? candidateOperator : operator,
+            ),
+          },
+        );
+
+        return (
+          replaceResult.reason === null &&
+          replaceResult.operators.some((operator) => operator.id === candidateOperator.id) &&
+          replaceResult.operators.every((operator) => operator.id !== targetOperator.id)
+        );
+      });
+
+      if (!replacementOperator) {
+        continue;
+      }
+
+      const addOperator = visibleOperators.find((candidateOperator) => {
+        if (
+          baseRecommendedOperatorIds.has(candidateOperator.id) ||
+          candidateOperator.id === replacementOperator.id
+        ) {
+          return false;
+        }
+
+        const addResult = buildRecommendedLineup(
+          visibleOperators,
+          selectedCovenantRequirements,
+          defaultMaxPopulation,
+          {
+            preferredOperators: [
+              replacementOperator,
+              ...preferredWithoutTarget,
+              candidateOperator,
+            ],
+          },
+        );
+
+        return (
+          addResult.reason === null &&
+          addResult.operators.some((operator) => operator.id === replacementOperator.id) &&
+          addResult.operators.some((operator) => operator.id === candidateOperator.id) &&
+          addResult.operators.every((operator) => operator.id !== targetOperator.id)
+        );
+      });
+
+      if (!addOperator) {
+        continue;
+      }
+
+      return {
+        addOperator,
+        replacementOperator,
+        selectedCovenantIds,
+        targetOperator,
+      };
+    }
+  }
+
+  throw new Error('未找到可用于推荐阵容替换与补位测试的场景');
+}
+
+function findRecommendationUnrestrictedReplacementScenario() {
+  for (const selectedCovenantIds of buildRecommendationSelectionCandidates()) {
+    const selectedCovenantTargetMap = buildSelectedCovenantTargetMap(
+      selectedCovenantIds,
+    );
+    const selectedCovenantRequirements = buildSelectedRequirements(
+      selectedCovenantIds,
+      selectedCovenantTargetMap,
+    );
+    const recommendationAvailableOperators = operators.filter((operator) =>
+      matchesOperatorLevel(operator, null),
+    );
+    const baseRecommendedLineup = buildRecommendedLineup(
+      recommendationAvailableOperators,
+      selectedCovenantRequirements,
+      defaultMaxPopulation,
+    );
+
+    if (baseRecommendedLineup.reason || baseRecommendedLineup.operators.length === 0) {
+      continue;
+    }
+
+    const baseRecommendedOperatorIds = new Set(
+      baseRecommendedLineup.operators.map((operator) => operator.id),
+    );
+
+    for (const targetOperator of baseRecommendedLineup.operators) {
+      const replacementOperator = recommendationAvailableOperators.find((candidateOperator) => {
+        if (baseRecommendedOperatorIds.has(candidateOperator.id)) {
+          return false;
+        }
+
+        return candidateOperator.covenants.every(
+          (covenantId) => !selectedCovenantIds.includes(covenantId),
+        );
+      });
+
+      if (!replacementOperator) {
+        continue;
+      }
+
+      return {
+        replacementOperator,
+        selectedCovenantIds,
+        targetOperator,
+      };
+    }
+  }
+
+  throw new Error('未找到可用于跨盟约替换推荐阵容的场景');
 }
 
 function findRecommendationPrimaryPriorityScenario() {
@@ -687,6 +892,202 @@ describe('StrategyBoardPage', () => {
     expect(nonPrimaryOperatorCard.parentElement).not.toHaveClass(primaryCardClassName);
   });
 
+  it('点击推荐卡片操作按钮时不会触发卡片跳转，并会保留替换与禁用操作', () => {
+    const { selectedCovenantIds, primaryOperator } =
+      findRecommendationPrimaryPriorityScenario();
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    applyStrategyScenario(selectedCovenantIds);
+    render(createElement(StrategyBoardPage));
+
+    fireEvent.click(
+      screen.getByRole('button', { name: `推荐卡片操作 ${primaryOperator.name}` }),
+    );
+
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: `替换推荐干员 ${primaryOperator.name}` }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: `禁用推荐干员 ${primaryOperator.name}` }),
+    ).toBeInTheDocument();
+
+    openSpy.mockRestore();
+  });
+
+  it('推荐阵容支持替换、空位补人和禁用指定干员', () => {
+    const {
+      addOperator,
+      replacementOperator,
+      selectedCovenantIds,
+      targetOperator,
+    } = findRecommendationCustomizationScenario();
+
+    applyStrategyScenario(selectedCovenantIds);
+    render(createElement(StrategyBoardPage));
+
+    const recommendationTitle = screen.getByRole('heading', { name: '推荐阵容' });
+    const recommendationSection = recommendationTitle.closest('section');
+
+    expect(recommendationSection).not.toBeNull();
+
+    fireEvent.click(
+      within(recommendationSection!).getByRole('button', {
+        name: `推荐卡片操作 ${targetOperator.name}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: `替换推荐干员 ${targetOperator.name}` }),
+    );
+
+    const replaceDialog = screen.getByRole('dialog', { name: `替换 ${targetOperator.name}` });
+
+    fireEvent.change(within(replaceDialog).getByLabelText('搜索候选干员'), {
+      target: { value: replacementOperator.name },
+    });
+    fireEvent.click(
+      within(replaceDialog).getByRole('button', {
+        name: `选择 ${replacementOperator.name}`,
+      }),
+    );
+
+    expect(
+      within(recommendationSection!).queryByText(targetOperator.name),
+    ).not.toBeInTheDocument();
+    expect(
+      within(recommendationSection!).getByText(replacementOperator.name),
+    ).toBeInTheDocument();
+    expect(useStrategyStore.getState().preferredRecommendedOperatorIds).toContain(
+      replacementOperator.id,
+    );
+    expect(useStrategyStore.getState().preferredRecommendedOperatorIds).not.toContain(
+      targetOperator.id,
+    );
+
+    fireEvent.click(
+      within(recommendationSection!).getAllByRole('button', {
+        name: /选择空位干员/,
+      })[0]!,
+    );
+
+    const addDialog = screen.getByRole('dialog', { name: '填补空位' });
+
+    fireEvent.change(within(addDialog).getByLabelText('搜索候选干员'), {
+      target: { value: addOperator.name },
+    });
+    fireEvent.click(
+      within(addDialog).getByRole('button', {
+        name: `选择 ${addOperator.name}`,
+      }),
+    );
+
+    expect(within(recommendationSection!).getByText(addOperator.name)).toBeInTheDocument();
+    expect(useStrategyStore.getState().preferredRecommendedOperatorIds).toContain(
+      addOperator.id,
+    );
+
+    fireEvent.click(
+      within(recommendationSection!).getByRole('button', {
+        name: `推荐卡片操作 ${replacementOperator.name}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: `禁用推荐干员 ${replacementOperator.name}` }),
+    );
+
+    expect(
+      within(recommendationSection!).queryByText(replacementOperator.name),
+    ).not.toBeInTheDocument();
+    expect(useStrategyStore.getState().blockedRecommendedOperatorIds).toContain(
+      replacementOperator.id,
+    );
+  });
+
+  it('推荐干员替换选择窗口会以 modal 形式展示，并支持点击遮罩关闭', () => {
+    const { selectedCovenantIds, targetOperator } =
+      findRecommendationCustomizationScenario();
+    const pickerOverlayClassName = styles.recommendationPickerOverlay;
+
+    if (!pickerOverlayClassName) {
+      throw new Error('推荐候选弹层遮罩样式类缺失');
+    }
+
+    applyStrategyScenario(selectedCovenantIds);
+    render(createElement(StrategyBoardPage));
+
+    const recommendationSection = screen
+      .getByRole('heading', { name: '推荐阵容' })
+      .closest('section');
+
+    expect(recommendationSection).not.toBeNull();
+
+    fireEvent.click(
+      within(recommendationSection!).getByRole('button', {
+        name: `推荐卡片操作 ${targetOperator.name}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: `替换推荐干员 ${targetOperator.name}` }),
+    );
+
+    const replaceDialog = screen.getByRole('dialog', { name: `替换 ${targetOperator.name}` });
+    const overlay = replaceDialog.parentElement;
+
+    expect(replaceDialog).toHaveAttribute('aria-modal', 'true');
+    expect(overlay).not.toBeNull();
+    expect(overlay).toHaveClass(pickerOverlayClassName);
+
+    fireEvent.click(overlay!);
+
+    expect(
+      screen.queryByRole('dialog', { name: `替换 ${targetOperator.name}` }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('推荐阵容支持替换成当前筛选盟约之外的干员', () => {
+    const { replacementOperator, selectedCovenantIds, targetOperator } =
+      findRecommendationUnrestrictedReplacementScenario();
+
+    applyStrategyScenario(selectedCovenantIds);
+    render(createElement(StrategyBoardPage));
+
+    const recommendationSection = screen
+      .getByRole('heading', { name: '推荐阵容' })
+      .closest('section');
+
+    expect(recommendationSection).not.toBeNull();
+
+    fireEvent.click(
+      within(recommendationSection!).getByRole('button', {
+        name: `推荐卡片操作 ${targetOperator.name}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: `替换推荐干员 ${targetOperator.name}` }),
+    );
+
+    const replaceDialog = screen.getByRole('dialog', { name: `替换 ${targetOperator.name}` });
+
+    fireEvent.change(within(replaceDialog).getByLabelText('搜索候选干员'), {
+      target: { value: replacementOperator.name },
+    });
+    fireEvent.click(
+      within(replaceDialog).getByRole('button', {
+        name: `选择 ${replacementOperator.name}`,
+      }),
+    );
+
+    expect(
+      within(recommendationSection!).getByText(replacementOperator.name),
+    ).toBeInTheDocument();
+    expect(
+      within(recommendationSection!).queryByText(targetOperator.name),
+    ).not.toBeInTheDocument();
+    expect(useStrategyStore.getState().preferredRecommendedOperatorIds).toContain(
+      replacementOperator.id,
+    );
+  });
+
   it('保存预设组合后可以恢复主次盟约筛选并支持修改、重命名和删除', () => {
     const primaryCovenant =
       primaryCovenants.find((item) => item.id === '炎') ?? primaryCovenants[0];
@@ -700,17 +1101,27 @@ describe('StrategyBoardPage', () => {
     const primaryStage = primaryCovenant.activationStages[1] ?? primaryCovenant.activationStages[0];
     const secondaryStage =
       secondaryCovenant.activationStages[0] ?? secondaryCovenant.activationCount;
+    const selectedCovenantIds = [primaryCovenant.id, secondaryCovenant.id];
+    const selectedCovenantTargetMap = {
+      [primaryCovenant.id]: primaryStage!,
+      [secondaryCovenant.id]: secondaryStage,
+    };
+    const expectedRecommendedOperatorNames = buildDisplayedRecommendedOperatorNames(
+      buildRecommendedLineup(
+        filterOperators(operators, selectedCovenantIds, '', [], null),
+        buildSelectedRequirements(selectedCovenantIds, selectedCovenantTargetMap),
+        9,
+      ).operators,
+      selectedCovenantIds,
+    );
     const promptSpy = vi
       .spyOn(window, 'prompt')
       .mockReturnValueOnce('炎突组合')
       .mockReturnValueOnce('炎突改名');
 
     useStrategyStore.setState({
-      selectedCovenantIds: [primaryCovenant.id, secondaryCovenant.id],
-      selectedCovenantTargetMap: {
-        [primaryCovenant.id]: primaryStage!,
-        [secondaryCovenant.id]: secondaryStage,
-      },
+      selectedCovenantIds,
+      selectedCovenantTargetMap,
       maxPopulation: 9,
       currentLevel: null,
       searchKeyword: '',
@@ -753,6 +1164,13 @@ describe('StrategyBoardPage', () => {
       'title',
       expect.stringContaining(`${secondaryCovenant.name} ${secondaryStage}人`),
     );
+    expect(presetButton).toHaveAttribute(
+      'title',
+      expect.stringContaining(`指定干员：${expectedRecommendedOperatorNames.join('、')}`),
+    );
+    expect(useStrategyStore.getState().covenantPresets[0]?.recommendedOperatorNames).toEqual(
+      expectedRecommendedOperatorNames,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: '重置筛选' }));
 
@@ -769,6 +1187,14 @@ describe('StrategyBoardPage', () => {
       [primaryCovenant.id]: primaryStage,
       [secondaryCovenant.id]: secondaryStage,
     });
+    expect(useStrategyStore.getState().preferredRecommendedOperatorIds).toHaveLength(
+      expectedRecommendedOperatorNames.length,
+    );
+    expect(
+      within(
+        screen.getByRole('heading', { name: '推荐阵容' }).closest('section')!,
+      ).getByText(expectedRecommendedOperatorNames[0]!),
+    ).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole('button', { name: `${primaryCovenant.name} ${primaryStage}人` }),
@@ -800,6 +1226,23 @@ describe('StrategyBoardPage', () => {
       [primaryCovenant.id]: primaryCovenant.activationStages[2] ?? primaryCovenant.activationStages[1] ?? primaryStage,
       [secondaryCovenant.id]: secondaryStage,
     });
+    expect(useStrategyStore.getState().covenantPresets[0]?.recommendedOperatorNames).toEqual(
+      buildDisplayedRecommendedOperatorNames(
+        Array.from(
+          screen
+            .getByRole('heading', { name: '推荐阵容' })
+            .closest('section')!
+            .querySelectorAll('article'),
+        )
+          .map((card) => {
+            const nameNode = card.querySelector(`.${styles.operatorName}`);
+            const operatorName = nameNode?.textContent ?? '';
+            return operators.find((operator) => operator.name === operatorName) ?? null;
+          })
+          .filter((operator): operator is OperatorEntity => operator !== null),
+        selectedCovenantIds,
+      ),
+    );
 
     fireEvent.click(presetMenuButton);
     fireEvent.click(screen.getByRole('button', { name: '重命名预设组合 炎突组合' }));
@@ -878,6 +1321,7 @@ describe('StrategyBoardPage', () => {
           selectedCovenantTargetMap: {
             [presetA.id]: presetA.activationStages[0] ?? presetA.activationCount,
           },
+          recommendedOperatorNames: [],
         },
         {
           id: 'preset-b',
@@ -886,6 +1330,7 @@ describe('StrategyBoardPage', () => {
           selectedCovenantTargetMap: {
             [presetB.id]: presetB.activationStages[0] ?? presetB.activationCount,
           },
+          recommendedOperatorNames: [],
         },
       ],
     });
@@ -976,6 +1421,7 @@ describe('StrategyBoardPage', () => {
             [existingPreset.id]:
               existingPreset.activationStages[0] ?? existingPreset.activationCount,
           },
+          recommendedOperatorNames: [],
         },
       ],
     });

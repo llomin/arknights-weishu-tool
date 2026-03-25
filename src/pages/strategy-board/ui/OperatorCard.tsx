@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import type { ReactNode } from 'react';
 import {
   getMatchedSelectedCovenants,
   hasMatchedPrimarySelectedCovenant,
@@ -21,12 +22,13 @@ export interface OperatorCardProps {
   covenantId: string;
   extraClassName?: string;
   onToggleOperator: (operatorId: string) => void;
-  onToggleRemovedOperator: (operatorId: string) => void;
+  onToggleRemovedOperator?: (operatorId: string) => void;
   operator: OperatorEntity;
   picked: boolean;
   searchHighlightKeywords?: string[];
   selectedCovenantIdSet: Set<string>;
   selectedPrimaryCovenantIdSet: Set<string>;
+  topRightSlot?: ReactNode;
 }
 
 export function OperatorCard({
@@ -39,6 +41,7 @@ export function OperatorCard({
   searchHighlightKeywords = [],
   selectedCovenantIdSet,
   selectedPrimaryCovenantIdSet,
+  topRightSlot,
 }: OperatorCardProps) {
   const isRecommendedCard = covenantId === 'recommended';
   const isRecommendedPrimaryOperatorCard =
@@ -109,28 +112,31 @@ export function OperatorCard({
           </div>
         </div>
 
-        <button
-          className={styles.removeButton}
-          type="button"
-          aria-label={`移除 ${operator.name}`}
-          title={`移除 ${operator.name}`}
-          onKeyDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggleRemovedOperator(operator.id);
-          }}
-        >
-          <svg className={styles.removeIcon} viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M9.25 3.75h5.5M4.75 6.75h14.5M8 6.75v11a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5-1.5v-11M10.5 10.25v5.5M13.5 10.25v5.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+        {topRightSlot ??
+        (onToggleRemovedOperator ? (
+          <button
+            className={styles.removeButton}
+            type="button"
+            aria-label={`禁用 ${operator.name}`}
+            title={`禁用 ${operator.name}`}
+            onKeyDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleRemovedOperator(operator.id);
+            }}
+          >
+            <svg className={styles.removeIcon} viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9.25 3.75h5.5M4.75 6.75h14.5M8 6.75v11a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5-1.5v-11M10.5 10.25v5.5M13.5 10.25v5.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        ) : null)}
       </div>
 
       <div className={styles.operatorDescription}>

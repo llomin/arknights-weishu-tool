@@ -92,6 +92,262 @@ describe('StrategyBoard sections', () => {
     );
   });
 
+  it('keeps the recommendation action button visible and lets the action panel expand only when opened from the button right side', () => {
+    const css = readStrategyBoardPageCss();
+
+    expect(css).toMatch(
+      /\.recommendationSection\s*\{[\s\S]*overflow:\s*visible;/,
+    );
+    expect(css).toMatch(
+      /\.operatorCard\s*\{[\s\S]*z-index:\s*0;/,
+    );
+    expect(css).toMatch(
+      /\.operatorCard:hover,\s*\.operatorCard:focus-within\s*\{[\s\S]*z-index:\s*6;/,
+    );
+    expect(css).toMatch(
+      /\.operatorActionSlot\s*\{[\s\S]*width:\s*34px;[\s\S]*overflow:\s*visible;[\s\S]*z-index:\s*7;[\s\S]*pointer-events:\s*auto;/,
+    );
+    expect(css).toMatch(
+      /\.operatorActionButton\s*\{[\s\S]*opacity:\s*1;[\s\S]*transform:\s*translateX\(0\);/,
+    );
+    expect(css).toMatch(
+      /\.operatorActionPanel\s*\{[\s\S]*top:\s*0;[\s\S]*left:\s*calc\(100% \+ 8px\);[\s\S]*right:\s*auto;[\s\S]*z-index:\s*12;[\s\S]*opacity:\s*0;[\s\S]*visibility:\s*hidden;[\s\S]*pointer-events:\s*none;[\s\S]*transform:\s*translate\(4px,\s*-2px\);/,
+    );
+    expect(css).not.toMatch(/\.operatorActionSlot:hover \.operatorActionPanel/);
+    expect(css).not.toMatch(/\.operatorActionSlot:focus-within \.operatorActionPanel/);
+    expect(css).toMatch(
+      /\.operatorActionSlotVisible \.operatorActionPanel\s*\{[\s\S]*opacity:\s*1;[\s\S]*visibility:\s*visible;[\s\S]*pointer-events:\s*auto;[\s\S]*transform:\s*translate\(0,\s*-2px\);/,
+    );
+    expect(css).toMatch(
+      /\.operatorActionItemDanger\s*\{[\s\S]*color:\s*#a65f66;/,
+    );
+    expect(css).toMatch(
+      /\.operatorActionItemDanger:hover\s*\{[\s\S]*background:\s*rgba\(252,\s*241,\s*242,\s*0\.98\);[\s\S]*color:\s*#8d5057;/,
+    );
+  });
+
+  it('renders recommendation action items in the DOM before clicking so click-open state can reveal them', () => {
+    const operator = operators.find((item) => item.covenants.length > 0);
+
+    if (!operator) {
+      throw new Error('缺少用于推荐菜单测试的干员数据');
+    }
+
+    render(
+      createElement(StrategyBoardRecommendationSection, {
+        availableOperators: [operator],
+        currentRecommendedOperatorIds: [operator.id],
+        maxPopulation: 8,
+        pickedOperatorIdSet: new Set<string>(),
+        recommendedLineup: {
+          operators: [operator],
+          requirements: [
+            {
+              id: operator.covenants[0]!,
+              name: operator.covenants[0]!,
+              targetCount: 1,
+            },
+          ],
+          matchedCounts: {
+            [operator.covenants[0]!]: 1,
+          },
+          maxPopulation: 8,
+          emptySlotCount: 0,
+          reason: null,
+        },
+        recommendedOperators: [operator],
+        removedOperators: [],
+        selectedCovenantCount: 1,
+        selectedCovenantIdSet: new Set(operator.covenants),
+        selectedPrimaryCovenantIdSet: new Set<string>(),
+        onRestoreRemovedOperators: vi.fn(),
+        onToggleOperator: vi.fn(),
+        onToggleRemovedOperator: vi.fn(),
+      }),
+    );
+
+    expect(
+      screen.getByLabelText(`替换推荐干员 ${operator.name}`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(`禁用推荐干员 ${operator.name}`),
+    ).toBeInTheDocument();
+    expect(screen.getByText('禁用')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: `推荐卡片操作 ${operator.name}` }),
+    ).toBeInTheDocument();
+  });
+
+  it('uses a muted red tone for the recommendation disable action', () => {
+    const css = readStrategyBoardPageCss();
+
+    expect(css).toMatch(
+      /\.operatorActionItemDanger:disabled\s*\{[\s\S]*color:\s*rgba\(166,\s*95,\s*102,\s*0\.6\);/,
+    );
+  });
+
+  it('uses a muted red status color for disabled recommendation candidates', () => {
+    const css = readStrategyBoardPageCss();
+
+    expect(css).toMatch(
+      /\.recommendationCandidateStatusDisabled\s*\{[\s\S]*background:\s*rgba\(179,\s*88,\s*98,\s*0\.12\);[\s\S]*color:\s*#9a5860;/,
+    );
+  });
+
+  it('renders the recommendation selector as a centered modal overlay', () => {
+    const css = readStrategyBoardPageCss();
+
+    expect(css).toMatch(
+      /\.recommendationPickerOverlay\s*\{[\s\S]*position:\s*fixed;[\s\S]*inset:\s*0;[\s\S]*z-index:\s*20;[\s\S]*display:\s*grid;[\s\S]*place-items:\s*center;/,
+    );
+    expect(css).toMatch(
+      /\.recommendationPickerOverlay\s*\{[\s\S]*background:\s*rgba\(27,\s*39,\s*52,\s*0\.28\);/,
+    );
+    expect(css).toMatch(
+      /\.recommendationPicker\s*\{[\s\S]*width:\s*min\(960px,\s*calc\(100vw - 32px\)\);[\s\S]*max-height:\s*calc\(100vh - 40px\);[\s\S]*overflow:\s*auto;/,
+    );
+    expect(css).toMatch(
+      /\.recommendationCandidateGrid\s*\{[\s\S]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/,
+    );
+  });
+
+  it('shows all available covenants in add-mode modal, with selected covenants first and highlighted', () => {
+    const operator = operators.find((item) => item.covenants.length >= 2);
+    const selectedChipClassName = styles.recommendationPickerFilterChipSelectedCovenant;
+    const pickerChipClassName = styles.recommendationPickerFilterChip;
+    const primaryChipClassName = styles.covenantChipPrimary;
+
+    if (!operator || !selectedChipClassName || !pickerChipClassName || !primaryChipClassName) {
+      throw new Error('缺少用于候选弹窗盟约筛选测试的干员或样式类');
+    }
+
+    const selectedCovenantId = operator.covenants[0]!;
+    const extraCovenantId = operator.covenants[1]!;
+
+    render(
+      createElement(StrategyBoardRecommendationSection, {
+        availableOperators: [operator],
+        currentRecommendedOperatorIds: [],
+        maxPopulation: 8,
+        pickedOperatorIdSet: new Set<string>(),
+        recommendedLineup: {
+          operators: [],
+          requirements: [
+            {
+              id: selectedCovenantId,
+              name: selectedCovenantId,
+              targetCount: 1,
+            },
+          ],
+          matchedCounts: {},
+          maxPopulation: 8,
+          emptySlotCount: 1,
+          reason: null,
+        },
+        recommendedOperators: [],
+        removedOperators: [],
+        selectedCovenantCount: 1,
+        selectedCovenantIdSet: new Set([selectedCovenantId]),
+        selectedPrimaryCovenantIdSet: new Set<string>(),
+        onRestoreRemovedOperators: vi.fn(),
+        onToggleOperator: vi.fn(),
+        onToggleRemovedOperator: vi.fn(),
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '选择空位干员 1' }));
+
+    const addDialog = screen.getByRole('dialog', { name: '填补空位' });
+    const selectedCovenantButton = within(addDialog).getByRole('button', {
+      name: selectedCovenantId,
+    });
+    const extraCovenantButton = within(addDialog).getByRole('button', {
+      name: extraCovenantId,
+    });
+
+    expect(selectedCovenantButton).toHaveClass(pickerChipClassName);
+    expect(selectedCovenantButton).toHaveClass(selectedChipClassName);
+    expect(selectedCovenantButton).not.toHaveClass(primaryChipClassName);
+    expect(extraCovenantButton).toHaveClass(pickerChipClassName);
+    expect(extraCovenantButton).not.toHaveClass(selectedChipClassName);
+    expect(
+      selectedCovenantButton.compareDocumentPosition(extraCovenantButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('shows non-selected covenant filters in replace-mode modal too', () => {
+    const operator = operators.find((item) => item.covenants.length >= 2);
+    const offCovenantOperator = operators.find(
+      (item) =>
+        item.covenants.length > 0 &&
+        item.id !== operator?.id &&
+        item.covenants.every((covenantId) => !operator?.covenants.includes(covenantId)),
+    );
+    const selectedChipClassName = styles.recommendationPickerFilterChipSelectedCovenant;
+    const pickerChipClassName = styles.recommendationPickerFilterChip;
+
+    if (!operator || !offCovenantOperator || !selectedChipClassName || !pickerChipClassName) {
+      throw new Error('缺少用于替换弹窗盟约筛选测试的干员或样式类');
+    }
+
+    const selectedCovenantId = operator.covenants[0]!;
+    const offCovenantId = offCovenantOperator.covenants[0]!;
+
+    render(
+      createElement(StrategyBoardRecommendationSection, {
+        availableOperators: [operator, offCovenantOperator],
+        currentRecommendedOperatorIds: [operator.id],
+        maxPopulation: 8,
+        pickedOperatorIdSet: new Set<string>(),
+        recommendedLineup: {
+          operators: [operator],
+          requirements: [
+            {
+              id: selectedCovenantId,
+              name: selectedCovenantId,
+              targetCount: 1,
+            },
+          ],
+          matchedCounts: {
+            [selectedCovenantId]: 1,
+          },
+          maxPopulation: 8,
+          emptySlotCount: 0,
+          reason: null,
+        },
+        recommendedOperators: [operator],
+        removedOperators: [],
+        selectedCovenantCount: 1,
+        selectedCovenantIdSet: new Set([selectedCovenantId]),
+        selectedPrimaryCovenantIdSet: new Set<string>(),
+        onRestoreRemovedOperators: vi.fn(),
+        onToggleOperator: vi.fn(),
+        onToggleRemovedOperator: vi.fn(),
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: `推荐卡片操作 ${operator.name}` }));
+    fireEvent.click(screen.getByLabelText(`替换推荐干员 ${operator.name}`));
+
+    const replaceDialog = screen.getByRole('dialog', { name: `替换 ${operator.name}` });
+    const selectedCovenantButton = within(replaceDialog).getByRole('button', {
+      name: selectedCovenantId,
+    });
+    const offCovenantButton = within(replaceDialog).getByRole('button', {
+      name: offCovenantId,
+    });
+
+    expect(selectedCovenantButton).toHaveClass(pickerChipClassName);
+    expect(selectedCovenantButton).toHaveClass(selectedChipClassName);
+    expect(offCovenantButton).toHaveClass(pickerChipClassName);
+    expect(offCovenantButton).not.toHaveClass(selectedChipClassName);
+    expect(
+      selectedCovenantButton.compareDocumentPosition(offCovenantButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('calls the search callback when the header input changes', () => {
     const onSearchKeywordChange = vi.fn();
 
@@ -112,6 +368,9 @@ describe('StrategyBoard sections', () => {
   it('renders filter chips and triggers filter callbacks', () => {
     const primaryCovenant = primaryCovenants[0];
     const secondaryCovenant = secondaryCovenants[0];
+    const recommendedOperatorNames = operators
+      .slice(0, 2)
+      .map((operator) => operator.name);
     const clickableCovenant = [...primaryCovenants, ...secondaryCovenants].find(
       (item) => item.id !== primaryCovenant?.id && item.id !== secondaryCovenant?.id,
     );
@@ -150,11 +409,13 @@ describe('StrategyBoard sections', () => {
               [primaryCovenant.id]: primaryStage!,
               [secondaryCovenant.id]: secondaryStage,
             },
+            recommendedOperatorNames,
           },
         ],
         currentLevel: 4,
         maxPopulation: 9,
         maxVisibleTier: 5,
+        recommendedOperatorNames,
         selectedCovenantIds: [primaryCovenant.id, secondaryCovenant.id],
         selectedCovenantTargetMap: {
           [primaryCovenant.id]: primaryStage!,
@@ -210,6 +471,10 @@ describe('StrategyBoard sections', () => {
       'title',
       expect.stringContaining(`${secondaryCovenant.name} ${secondaryStage}人`),
     );
+    expect(presetButton).toHaveAttribute(
+      'title',
+      expect.stringContaining(`指定干员：${recommendedOperatorNames.join('、')}`),
+    );
 
     fireEvent.click(saveButton);
     fireEvent.click(presetButton);
@@ -264,9 +529,15 @@ describe('StrategyBoard sections', () => {
 
     expect(promptSpy).toHaveBeenCalledWith('请输入组合名称', defaultPresetName);
     expect(promptSpy).toHaveBeenCalledWith('请输入新的组合名称', '炎突组合');
-    expect(onSaveCovenantPreset).toHaveBeenCalledWith('常用组合');
+    expect(onSaveCovenantPreset).toHaveBeenCalledWith(
+      '常用组合',
+      recommendedOperatorNames,
+    );
     expect(onApplyCovenantPreset).toHaveBeenCalledTimes(2);
-    expect(onUpdateCovenantPreset).toHaveBeenCalledWith('preset-1');
+    expect(onUpdateCovenantPreset).toHaveBeenCalledWith(
+      'preset-1',
+      recommendedOperatorNames,
+    );
     expect(onRenameCovenantPreset).toHaveBeenCalledWith('preset-1', '新版组合');
     expect(onDeleteCovenantPreset).toHaveBeenCalledWith('preset-1');
     expect(onToggleCovenant).toHaveBeenCalledWith(
@@ -287,6 +558,7 @@ describe('StrategyBoard sections', () => {
         currentLevel: 4,
         maxPopulation: 9,
         maxVisibleTier: 5,
+        recommendedOperatorNames: [],
         selectedCovenantIds: [],
         selectedCovenantTargetMap: {},
         onSaveCovenantPreset: vi.fn(),
@@ -330,6 +602,7 @@ describe('StrategyBoard sections', () => {
         currentLevel: 4,
         maxPopulation: 9,
         maxVisibleTier: 5,
+        recommendedOperatorNames: [],
         selectedCovenantIds: [],
         selectedCovenantTargetMap: {},
         onSaveCovenantPreset: vi.fn(),
@@ -390,11 +663,13 @@ describe('StrategyBoard sections', () => {
               [primaryCovenant.id]: primaryStage!,
               [secondaryCovenant.id]: secondaryStage,
             },
+            recommendedOperatorNames: [],
           },
         ],
         currentLevel: 4,
         maxPopulation: 9,
         maxVisibleTier: 5,
+        recommendedOperatorNames: [],
         selectedCovenantIds: [primaryCovenant.id, secondaryCovenant.id],
         selectedCovenantTargetMap: {
           [primaryCovenant.id]: primaryStage!,

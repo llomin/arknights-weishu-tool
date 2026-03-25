@@ -17,15 +17,29 @@ import {
   sortGroupsWithPrimaryFirst,
 } from '@/pages/strategy-board/model/strategyBoardDisplay';
 import { getSearchKeywords } from '@/shared/lib/searchKeywords';
-import type { StrategyState } from '@/shared/types/domain';
+import type { OperatorEntity, StrategyState } from '@/shared/types/domain';
 
 export interface UseStrategyBoardViewModelInput {
+  blockedRecommendedOperatorIds: string[];
   currentLevel: StrategyState['currentLevel'];
   maxPopulation: StrategyState['maxPopulation'];
+  preferredRecommendedOperatorIds: string[];
   removedOperatorIds: string[];
   searchKeyword: string;
   selectedCovenantIds: string[];
   selectedCovenantTargetMap: StrategyState['selectedCovenantTargetMap'];
+}
+
+function buildMatchedCountsForOperators(
+  operatorsForRecommendation: OperatorEntity[],
+  requirementIds: { id: string }[],
+) {
+  return requirementIds.reduce<Record<string, number>>((counts, requirement) => {
+    counts[requirement.id] = operatorsForRecommendation.filter((operator) =>
+      operator.covenants.includes(requirement.id),
+    ).length;
+    return counts;
+  }, {});
 }
 
 export function useStrategyBoardViewModel(
@@ -44,6 +58,10 @@ export function useStrategyBoardViewModel(
     input.removedOperatorIds,
     input.currentLevel,
   );
+  const recommendationAvailableOperators = operators
+    .filter((operator) => matchesOperatorRemoval(operator, input.removedOperatorIds))
+    .filter((operator) => matchesOperatorLevel(operator, input.currentLevel))
+    .sort(sortOperators);
   const groups = buildOperatorGroups(
     operators,
     input.selectedCovenantIds,
@@ -86,11 +104,47 @@ export function useStrategyBoardViewModel(
       };
     })
     .filter((requirement): requirement is NonNullable<typeof requirement> => requirement !== null);
-  const recommendedLineup = buildRecommendedLineup(
-    visibleOperators,
+  const blockedRecommendedOperatorIdSet = new Set(input.blockedRecommendedOperatorIds);
+  const recommendationAvailableOperatorIdSet = new Set(
+    recommendationAvailableOperators.map((operator) => operator.id),
+  );
+  const preferredRecommendedOperators = input.preferredRecommendedOperatorIds
+    .map((operatorId) => operatorMap[operatorId])
+    .filter((operator): operator is NonNullable<typeof operator> => Boolean(operator))
+    .filter(
+      (operator) =>
+        !blockedRecommendedOperatorIdSet.has(operator.id) &&
+        recommendationAvailableOperatorIdSet.has(operator.id),
+    );
+  const computedRecommendedLineup = buildRecommendedLineup(
+    recommendationAvailableOperators.filter(
+      (operator) => !blockedRecommendedOperatorIdSet.has(operator.id),
+    ),
     selectedCovenantRequirements,
     input.maxPopulation,
+    {
+      preferredOperators: preferredRecommendedOperators,
+    },
   );
+  const recommendedLineup =
+    computedRecommendedLineup.reason !== null &&
+    preferredRecommendedOperators.length > 0 &&
+    preferredRecommendedOperators.length <= input.maxPopulation
+      ? {
+          operators: preferredRecommendedOperators,
+          requirements: selectedCovenantRequirements,
+          matchedCounts: buildMatchedCountsForOperators(
+            preferredRecommendedOperators,
+            selectedCovenantRequirements,
+          ),
+          maxPopulation: input.maxPopulation,
+          emptySlotCount: Math.max(
+            input.maxPopulation - preferredRecommendedOperators.length,
+            0,
+          ),
+          reason: computedRecommendedLineup.reason,
+        }
+      : computedRecommendedLineup;
   const sortedRecommendedOperators = [...recommendedLineup.operators].sort(
     (left, right) =>
       compareRecommendedOperatorsForDisplay(
@@ -113,6 +167,7 @@ export function useStrategyBoardViewModel(
     maxVisibleTier,
     otherGroups,
     priorityGroups,
+    recommendationAvailableOperators,
     recommendedLineup,
     removedOperators,
     searchKeywords,

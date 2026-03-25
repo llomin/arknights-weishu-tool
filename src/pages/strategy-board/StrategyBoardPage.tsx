@@ -21,6 +21,12 @@ export function StrategyBoardPage() {
   const currentLevel = useStrategyStore((state) => state.currentLevel);
   const searchKeyword = useStrategyStore((state) => state.searchKeyword);
   const pickedOperatorIds = useStrategyStore((state) => state.pickedOperatorIds);
+  const preferredRecommendedOperatorIds = useStrategyStore(
+    (state) => state.preferredRecommendedOperatorIds,
+  );
+  const blockedRecommendedOperatorIds = useStrategyStore(
+    (state) => state.blockedRecommendedOperatorIds,
+  );
   const removedOperatorIds = useStrategyStore((state) => state.removedOperatorIds);
   const restoreRemovedOperators = useStrategyStore(
     (state) => state.restoreRemovedOperators,
@@ -48,6 +54,12 @@ export function StrategyBoardPage() {
   );
   const setSearchKeyword = useStrategyStore((state) => state.setSearchKeyword);
   const reset = useStrategyStore((state) => state.reset);
+  const setBlockedRecommendedOperatorIds = useStrategyStore(
+    (state) => state.setBlockedRecommendedOperatorIds,
+  );
+  const setPreferredRecommendedOperatorIds = useStrategyStore(
+    (state) => state.setPreferredRecommendedOperatorIds,
+  );
   const updateCovenantPreset = useStrategyStore(
     (state) => state.updateCovenantPreset,
   );
@@ -57,6 +69,7 @@ export function StrategyBoardPage() {
     maxVisibleTier,
     otherGroups,
     priorityGroups,
+    recommendationAvailableOperators,
     recommendedLineup,
     removedOperators,
     searchKeywords,
@@ -64,6 +77,7 @@ export function StrategyBoardPage() {
     selectedCovenantIdSet,
     selectedPrimaryCovenantIdSet,
     sortedRecommendedOperators,
+    visibleOperators,
   } = useStrategyBoardViewModel({
     selectedCovenantIds,
     selectedCovenantTargetMap,
@@ -71,8 +85,17 @@ export function StrategyBoardPage() {
     currentLevel,
     searchKeyword,
     removedOperatorIds,
+    preferredRecommendedOperatorIds,
+    blockedRecommendedOperatorIds,
   });
   const pickedOperatorIdSet = new Set(pickedOperatorIds);
+  const blockedRecommendedOperatorIdSet = new Set(blockedRecommendedOperatorIds);
+  const currentRecommendedOperatorIds = sortedRecommendedOperators.map(
+    (operator) => operator.id,
+  );
+  const recommendedOperatorNames = sortedRecommendedOperators.map(
+    (operator) => operator.name,
+  );
   const openOperatorWiki = (operatorId: string) => {
     const operatorName = operatorMap[operatorId]?.name ?? operatorId;
 
@@ -81,6 +104,45 @@ export function StrategyBoardPage() {
       '_blank',
       'noopener,noreferrer',
     );
+  };
+  const handleReplaceRecommendedOperator = (
+    currentOperatorId: string,
+    nextOperatorId: string,
+    nextRecommendedOperatorIds: string[],
+  ) => {
+    setPreferredRecommendedOperatorIds(nextRecommendedOperatorIds);
+    setBlockedRecommendedOperatorIds(
+      currentOperatorId === nextOperatorId
+        ? blockedRecommendedOperatorIds.filter(
+            (operatorId) => operatorId !== nextOperatorId,
+          )
+        : [
+            ...blockedRecommendedOperatorIds.filter(
+              (operatorId) =>
+                operatorId !== nextOperatorId && operatorId !== currentOperatorId,
+            ),
+            currentOperatorId,
+          ],
+    );
+  };
+  const handleAddRecommendedOperator = (
+    nextOperatorId: string,
+    nextRecommendedOperatorIds: string[],
+  ) => {
+    setPreferredRecommendedOperatorIds(nextRecommendedOperatorIds);
+    setBlockedRecommendedOperatorIds(
+      blockedRecommendedOperatorIds.filter((operatorId) => operatorId !== nextOperatorId),
+    );
+  };
+  const handleDeleteRecommendedOperator = (
+    operatorId: string,
+    nextRecommendedOperatorIds: string[],
+  ) => {
+    setPreferredRecommendedOperatorIds(nextRecommendedOperatorIds);
+    setBlockedRecommendedOperatorIds([
+      ...blockedRecommendedOperatorIds,
+      operatorId,
+    ]);
   };
 
   return (
@@ -115,6 +177,7 @@ export function StrategyBoardPage() {
         onRenameCovenantPreset={renameCovenantPreset}
         onSaveCovenantPreset={saveCovenantPreset}
         onUpdateCovenantPreset={updateCovenantPreset}
+        recommendedOperatorNames={recommendedOperatorNames}
         selectedCovenantIds={selectedCovenantIds}
         selectedCovenantTargetMap={selectedCovenantTargetMap}
         onSetMaxPopulation={setMaxPopulation}
@@ -124,6 +187,9 @@ export function StrategyBoardPage() {
       />
 
       <StrategyBoardRecommendationSection
+        availableOperators={recommendationAvailableOperators}
+        blockedRecommendedOperatorIdSet={blockedRecommendedOperatorIdSet}
+        currentRecommendedOperatorIds={currentRecommendedOperatorIds}
         maxPopulation={maxPopulation}
         pickedOperatorIdSet={pickedOperatorIdSet}
         recommendedLineup={recommendedLineup}
@@ -132,6 +198,9 @@ export function StrategyBoardPage() {
         selectedCovenantCount={selectedCovenantIds.length}
         selectedCovenantIdSet={selectedCovenantIdSet}
         selectedPrimaryCovenantIdSet={selectedPrimaryCovenantIdSet}
+        onAddRecommendedOperator={handleAddRecommendedOperator}
+        onDeleteRecommendedOperator={handleDeleteRecommendedOperator}
+        onReplaceRecommendedOperator={handleReplaceRecommendedOperator}
         onRestoreRemovedOperators={restoreRemovedOperators}
         onToggleOperator={openOperatorWiki}
         onToggleRemovedOperator={toggleRemovedOperator}

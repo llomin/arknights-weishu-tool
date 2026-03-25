@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { covenantMap } from '@/entities/covenant/model/normalizeCovenants';
+import { operatorMap } from '@/entities/operator/model/normalizeOperators';
 import type { CovenantPreset, StrategyState } from '@/shared/types/domain';
 
 interface StrategyStore extends StrategyState {
@@ -9,15 +10,17 @@ interface StrategyStore extends StrategyState {
   renameCovenantPreset: (presetId: string, name: string) => void;
   reset: () => void;
   restoreRemovedOperators: () => void;
-  saveCovenantPreset: (name: string) => void;
+  saveCovenantPreset: (name: string, recommendedOperatorNames: string[]) => void;
+  setBlockedRecommendedOperatorIds: (operatorIds: string[]) => void;
   setMaxPopulation: (population: StrategyState['maxPopulation']) => void;
+  setPreferredRecommendedOperatorIds: (operatorIds: string[]) => void;
   setSearchKeyword: (keyword: string) => void;
   toggleCovenant: (covenantId: string, activationStages: number[]) => void;
   toggleCurrentLevel: (level: NonNullable<StrategyState['currentLevel']>) => void;
   toggleFavoriteOperator: (operatorId: string) => void;
   toggleOperator: (operatorId: string) => void;
   toggleRemovedOperator: (operatorId: string) => void;
-  updateCovenantPreset: (presetId: string) => void;
+  updateCovenantPreset: (presetId: string, recommendedOperatorNames: string[]) => void;
 }
 
 const favoriteStorageKey = 'strategy-board.favoriteOperatorIds';
@@ -134,6 +137,12 @@ function normalizeCovenantPreset(value: unknown): CovenantPreset | null {
     name: record.name.trim() || '未命名组合',
     selectedCovenantIds,
     selectedCovenantTargetMap,
+    recommendedOperatorNames: Array.isArray(record.recommendedOperatorNames)
+      ? [...new Set(record.recommendedOperatorNames)]
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0)
+      : [],
   };
 }
 
@@ -184,6 +193,7 @@ function cloneCovenantPreset(preset: CovenantPreset): CovenantPreset {
     name: preset.name,
     selectedCovenantIds: [...preset.selectedCovenantIds],
     selectedCovenantTargetMap: { ...preset.selectedCovenantTargetMap },
+    recommendedOperatorNames: [...preset.recommendedOperatorNames],
   };
 }
 
@@ -267,6 +277,40 @@ function saveFavoriteOperatorIds(favoriteOperatorIds: string[]) {
   }
 }
 
+function normalizeRecommendedOperatorIds(operatorIds: string[]) {
+  const usedOperatorIdSet = new Set<string>();
+
+  return operatorIds.filter((operatorId) => {
+    if (!operatorMap[operatorId] || usedOperatorIdSet.has(operatorId)) {
+      return false;
+    }
+
+    usedOperatorIdSet.add(operatorId);
+    return true;
+  });
+}
+
+function normalizeRecommendedOperatorNames(operatorNames: string[]) {
+  return normalizeRecommendedOperatorIds(
+    operatorNames
+      .map((operatorName) => operatorName.trim())
+      .filter((operatorName) => operatorName.length > 0),
+  ).map((operatorId) => operatorMap[operatorId]!.name);
+}
+
+function resolveRecommendedOperatorIds(operatorNames: string[]) {
+  return normalizeRecommendedOperatorIds(
+    operatorNames.filter((operatorName) => Boolean(operatorMap[operatorName])),
+  );
+}
+
+function buildRecommendationCustomizationResetState() {
+  return {
+    preferredRecommendedOperatorIds: [],
+    blockedRecommendedOperatorIds: [],
+  };
+}
+
 const initialState: StrategyState = {
   selectedCovenantIds: [],
   selectedCovenantTargetMap: {},
@@ -276,6 +320,8 @@ const initialState: StrategyState = {
   searchKeyword: '',
   pickedOperatorIds: [],
   removedOperatorIds: [],
+  preferredRecommendedOperatorIds: [],
+  blockedRecommendedOperatorIds: [],
   favoriteOperatorIds: loadFavoriteOperatorIds(),
 };
 
@@ -289,11 +335,17 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
         return state;
       }
 
-      return buildSelectedCovenantState(
-        preset.selectedCovenantIds,
-        preset.selectedCovenantTargetMap,
-        state.maxPopulation,
-      );
+      return {
+        ...buildSelectedCovenantState(
+          preset.selectedCovenantIds,
+          preset.selectedCovenantTargetMap,
+          state.maxPopulation,
+        ),
+        preferredRecommendedOperatorIds: resolveRecommendedOperatorIds(
+          preset.recommendedOperatorNames,
+        ),
+        blockedRecommendedOperatorIds: [],
+      };
     }),
   deleteCovenantPreset: (presetId) =>
     set((state) => {
@@ -365,13 +417,15 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
       pickedOperatorIds: [],
       removedOperatorIds: [],
       favoriteOperatorIds: state.favoriteOperatorIds,
+      ...buildRecommendationCustomizationResetState(),
     })),
   restoreRemovedOperators: () =>
     set((state) => ({
       ...state,
       removedOperatorIds: [],
+      ...buildRecommendationCustomizationResetState(),
     })),
-  saveCovenantPreset: (name) =>
+  saveCovenantPreset: (name, recommendedOperatorNames = []) =>
     set((state) => {
       const trimmedName = name.trim();
 
@@ -400,6 +454,9 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
             },
             {},
           ),
+          recommendedOperatorNames: normalizeRecommendedOperatorNames(
+            recommendedOperatorNames,
+          ),
         },
       ];
 
@@ -409,7 +466,7 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
         covenantPresets,
       };
     }),
-  updateCovenantPreset: (presetId) =>
+  updateCovenantPreset: (presetId, recommendedOperatorNames = []) =>
     set((state) => {
       const preset = state.covenantPresets.find((item) => item.id === presetId);
 
@@ -434,6 +491,9 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
               selectedCovenantIds: nextSelectedCovenantState.selectedCovenantIds,
               selectedCovenantTargetMap:
                 nextSelectedCovenantState.selectedCovenantTargetMap,
+              recommendedOperatorNames: normalizeRecommendedOperatorNames(
+                recommendedOperatorNames,
+              ),
             }
           : item,
       );
@@ -444,9 +504,17 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
         covenantPresets,
       };
     }),
+  setBlockedRecommendedOperatorIds: (operatorIds) =>
+    set(() => ({
+      blockedRecommendedOperatorIds: normalizeRecommendedOperatorIds(operatorIds),
+    })),
   setSearchKeyword: (keyword) =>
     set(() => ({
       searchKeyword: keyword,
+    })),
+  setPreferredRecommendedOperatorIds: (operatorIds) =>
+    set(() => ({
+      preferredRecommendedOperatorIds: normalizeRecommendedOperatorIds(operatorIds),
     })),
   setMaxPopulation: (population) =>
     set((state) => {
@@ -459,6 +527,7 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
       return {
         ...nextSelectedCovenantState,
         maxPopulation: population,
+        ...buildRecommendationCustomizationResetState(),
       };
     }),
   toggleCovenant: (covenantId, activationStages) =>
@@ -478,6 +547,7 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
             ...state.selectedCovenantTargetMap,
             [covenantId]: firstStage,
           },
+          ...buildRecommendationCustomizationResetState(),
         };
       }
 
@@ -493,6 +563,7 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
             ...state.selectedCovenantTargetMap,
             [covenantId]: nextTargetCount,
           },
+          ...buildRecommendationCustomizationResetState(),
         };
       }
 
@@ -502,11 +573,13 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
       return {
         selectedCovenantIds: state.selectedCovenantIds.filter((item) => item !== covenantId),
         selectedCovenantTargetMap: nextSelectedCovenantTargetMap,
+        ...buildRecommendationCustomizationResetState(),
       };
     }),
   toggleCurrentLevel: (level) =>
     set((state) => ({
       currentLevel: state.currentLevel === level ? null : level,
+      ...buildRecommendationCustomizationResetState(),
     })),
   toggleFavoriteOperator: (operatorId) =>
     set((state) => {
@@ -537,6 +610,7 @@ export const useStrategyStore = create<StrategyStore>((set) => ({
         pickedOperatorIds: alreadyRemoved
           ? state.pickedOperatorIds
           : state.pickedOperatorIds.filter((item) => item !== operatorId),
+        ...buildRecommendationCustomizationResetState(),
       };
     }),
 }));

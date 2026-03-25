@@ -42,6 +42,7 @@ export interface CovenantPreset {
   name: string;
   selectedCovenantIds: string[];
   selectedCovenantTargetMap: Record<string, number>;
+  recommendedOperatorNames: string[];
 }
 
 export interface StrategyState {
@@ -53,5 +54,7 @@ export interface StrategyState {
   searchKeyword: string;
   pickedOperatorIds: string[];
   removedOperatorIds: string[];
+  preferredRecommendedOperatorIds: string[];
+  blockedRecommendedOperatorIds: string[];
   favoriteOperatorIds: string[];
 }

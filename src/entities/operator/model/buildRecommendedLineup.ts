@@ -15,6 +15,10 @@ export interface RecommendedLineupResult {
   reason: string | null;
 }
 
+export interface BuildRecommendedLineupOptions {
+  preferredOperators?: OperatorEntity[];
+}
+
 interface LineupState {
   counts: number[];
   operators: OperatorEntity[];
@@ -110,23 +114,69 @@ function buildImpossibleResult(
   };
 }
 
+function getUniquePreferredOperators(preferredOperators: OperatorEntity[] = []) {
+  const usedOperatorIdSet = new Set<string>();
+
+  return preferredOperators.filter((operator) => {
+    if (usedOperatorIdSet.has(operator.id)) {
+      return false;
+    }
+
+    usedOperatorIdSet.add(operator.id);
+    return true;
+  });
+}
+
 export function buildRecommendedLineup(
   availableOperators: OperatorEntity[],
   requirements: CovenantRequirement[],
   maxPopulation: 8 | 9,
+  options: BuildRecommendedLineupOptions = {},
 ): RecommendedLineupResult {
   if (requirements.length === 0) {
+    const preferredOperators = getUniquePreferredOperators(options.preferredOperators);
+
+    if (preferredOperators.length > maxPopulation) {
+      return buildImpossibleResult(
+        requirements,
+        maxPopulation,
+        `已指定 ${preferredOperators.length} 名干员，已超过当前最大人口 ${maxPopulation}。`,
+      );
+    }
+
     return {
-      operators: [],
+      operators: preferredOperators,
       requirements,
-      matchedCounts: {},
+      matchedCounts: buildMatchedCounts(preferredOperators, requirements),
       maxPopulation,
-      emptySlotCount: maxPopulation,
+      emptySlotCount: Math.max(maxPopulation - preferredOperators.length, 0),
       reason: null,
     };
   }
 
+  const preferredOperators = getUniquePreferredOperators(options.preferredOperators);
+
+  if (preferredOperators.length > maxPopulation) {
+    return buildImpossibleResult(
+      requirements,
+      maxPopulation,
+      `已指定 ${preferredOperators.length} 名干员，已超过当前最大人口 ${maxPopulation}。`,
+    );
+  }
+
   const requirementIds = new Set(requirements.map((requirement) => requirement.id));
+  const availableOperatorIdSet = new Set(availableOperators.map((operator) => operator.id));
+  const visiblePreferredOperators = preferredOperators.filter((operator) =>
+    availableOperatorIdSet.has(operator.id),
+  );
+
+  if (visiblePreferredOperators.length !== preferredOperators.length) {
+    return buildImpossibleResult(
+      requirements,
+      maxPopulation,
+      '当前已指定干员里存在不满足筛选条件的干员，请重新选择推荐阵容。',
+    );
+  }
 
   for (const requirement of requirements) {
     if (requirement.targetCount > maxPopulation) {
@@ -138,29 +188,94 @@ export function buildRecommendedLineup(
     }
   }
 
+  const preferredMatchedCounts = buildMatchedCounts(visiblePreferredOperators, requirements);
+
+  for (const requirement of requirements) {
+    const matchedCount = preferredMatchedCounts[requirement.id] ?? 0;
+
+    if (
+      EXACT_REQUIREMENT_IDS.has(requirement.id) &&
+      matchedCount > requirement.targetCount
+    ) {
+      return buildImpossibleResult(
+        requirements,
+        maxPopulation,
+        `${requirement.name} 当前已指定 ${matchedCount} 人，超过当前阶段要求 ${requirement.targetCount} 人。`,
+      );
+    }
+  }
+
+  const remainingRequirements = requirements
+    .map((requirement) => {
+      const matchedCount = preferredMatchedCounts[requirement.id] ?? 0;
+      const remainingTargetCount = Math.max(requirement.targetCount - matchedCount, 0);
+
+      if (remainingTargetCount === 0) {
+        return null;
+      }
+
+      return {
+        ...requirement,
+        targetCount: remainingTargetCount,
+      };
+    })
+    .filter((requirement): requirement is CovenantRequirement => requirement !== null);
+  const remainingPopulation = maxPopulation - visiblePreferredOperators.length;
+
+  if (remainingPopulation < 0) {
+    return buildImpossibleResult(
+      requirements,
+      maxPopulation,
+      `已指定 ${visiblePreferredOperators.length} 名干员，已超过当前最大人口 ${maxPopulation}。`,
+    );
+  }
+
+  if (remainingRequirements.length === 0) {
+    const operators = [...visiblePreferredOperators].sort((left, right) =>
+      compareOperatorsForRecommendation(left, right, requirementIds),
+    );
+
+    return {
+      operators,
+      requirements,
+      matchedCounts: buildMatchedCounts(operators, requirements),
+      maxPopulation,
+      emptySlotCount: Math.max(maxPopulation - operators.length, 0),
+      reason: null,
+    };
+  }
+
   const candidateOperators = availableOperators
+    .filter((operator) => !visiblePreferredOperators.some((item) => item.id === operator.id))
     .filter((operator) =>
-      operator.covenants.some((covenantId) => requirementIds.has(covenantId)),
+      operator.covenants.some((covenantId) =>
+        remainingRequirements.some((requirement) => requirement.id === covenantId),
+      ),
     )
     .sort((left, right) =>
       compareOperatorsForRecommendation(left, right, requirementIds),
     );
 
-  for (const requirement of requirements) {
+  for (const requirement of remainingRequirements) {
     const candidateCount = candidateOperators.filter((operator) =>
       operator.covenants.includes(requirement.id),
     ).length;
 
-    if (candidateCount < requirement.targetCount) {
+    const requiredCount = requirement.targetCount;
+
+    if (candidateCount < requiredCount) {
+      const totalAvailableCount =
+        candidateCount + (preferredMatchedCounts[requirement.id] ?? 0);
+
       return buildImpossibleResult(
         requirements,
         maxPopulation,
-        `${requirement.name} 当前可用干员不足 ${requirement.targetCount} 人，无法满足解锁条件。`,
+        `${requirement.name} 当前可用干员不足 ${totalAvailableCount}/${requirements.find((item) => item.id === requirement.id)?.targetCount ?? requiredCount} 人，无法满足解锁条件。`,
       );
     }
   }
 
-  const targetCounts = requirements.map((requirement) => requirement.targetCount);
+  const targetCounts = remainingRequirements.map((requirement) => requirement.targetCount);
   const targetKey = buildLineupStateKey(targetCounts);
   let states = new Map<string, LineupState>([
     [
@@ -186,7 +301,7 @@ export function buildRecommendedLineup(
       const nextCounts = [...state.counts];
       let shouldSkip = false;
 
-      requirements.forEach((requirement, index) => {
+      remainingRequirements.forEach((requirement, index) => {
         if (!operator.covenants.includes(requirement.id)) {
           return;
         }
@@ -234,11 +349,11 @@ export function buildRecommendedLineup(
     return buildImpossibleResult(
       requirements,
       maxPopulation,
-      '当前最大人口、等级限制和已删干员条件下，无法同时满足已选盟约阶段。',
+      '当前最大人口、等级限制、已删干员和已指定干员条件下，无法同时满足已选盟约阶段。',
     );
   }
 
-  const operators = [...bestState.operators].sort((left, right) =>
+  const operators = [...visiblePreferredOperators, ...bestState.operators].sort((left, right) =>
     compareOperatorsForRecommendation(left, right, requirementIds),
   );
 

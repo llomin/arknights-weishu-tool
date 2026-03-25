@@ -93,7 +93,7 @@ describe('OperatorCard', () => {
       }),
     );
 
-    const card = screen.getByRole('button', { name: `移除 ${operator.name}` }).closest('article');
+    const card = screen.getByRole('button', { name: `禁用 ${operator.name}` }).closest('article');
 
     if (!card) {
       throw new Error(`未找到干员 ${operator.name} 的卡片`);

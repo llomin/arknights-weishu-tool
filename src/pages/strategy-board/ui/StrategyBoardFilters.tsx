@@ -26,11 +26,15 @@ export interface StrategyBoardFiltersProps {
   onImportCovenantPresets: (value: unknown) => void;
   onRenameCovenantPreset: (presetId: string, name: string) => void;
   onReset: () => void;
-  onSaveCovenantPreset: (name: string) => void;
+  onSaveCovenantPreset: (name: string, recommendedOperatorNames: string[]) => void;
   onSetMaxPopulation: (population: StrategyState['maxPopulation']) => void;
   onToggleCovenant: (covenantId: string, activationStages: number[]) => void;
   onToggleCurrentLevel: (level: OperatorEntity['tier']) => void;
-  onUpdateCovenantPreset: (presetId: string) => void;
+  onUpdateCovenantPreset: (
+    presetId: string,
+    recommendedOperatorNames: string[],
+  ) => void;
+  recommendedOperatorNames: string[];
   selectedCovenantIds: string[];
   selectedCovenantTargetMap: StrategyState['selectedCovenantTargetMap'];
 }
@@ -83,9 +87,14 @@ function buildPresetDetailLine(
 }
 
 function buildPresetTitle(preset: CovenantPreset) {
-  return [buildPresetDetailLine(preset, true), buildPresetDetailLine(preset, false)].join(
-    '\n',
-  );
+  const lines = [buildPresetDetailLine(preset, true), buildPresetDetailLine(preset, false)];
+  const recommendedOperatorNames = preset.recommendedOperatorNames ?? [];
+
+  if (recommendedOperatorNames.length > 0) {
+    lines.push(`指定干员：${recommendedOperatorNames.join('、')}`);
+  }
+
+  return lines.join('\n');
 }
 
 function buildPresetExportPayload(preset: CovenantPreset) {
@@ -94,6 +103,7 @@ function buildPresetExportPayload(preset: CovenantPreset) {
     name: preset.name,
     selectedCovenantIds: [...preset.selectedCovenantIds],
     selectedCovenantTargetMap: { ...preset.selectedCovenantTargetMap },
+    recommendedOperatorNames: [...(preset.recommendedOperatorNames ?? [])],
   };
 }
 
@@ -161,6 +171,7 @@ export function StrategyBoardFilters({
   onToggleCovenant,
   onToggleCurrentLevel,
   onUpdateCovenantPreset,
+  recommendedOperatorNames,
   selectedCovenantIds,
   selectedCovenantTargetMap,
 }: StrategyBoardFiltersProps) {
@@ -193,7 +204,7 @@ export function StrategyBoardFilters({
     }
 
     if (editingPreset !== null) {
-      onUpdateCovenantPreset(editingPreset.id);
+      onUpdateCovenantPreset(editingPreset.id, recommendedOperatorNames);
       setEditingPresetId(null);
       setActivePresetId(editingPreset.id);
       return;
@@ -208,7 +219,10 @@ export function StrategyBoardFilters({
       return;
     }
 
-    onSaveCovenantPreset(nextPresetName.trim() || defaultPresetName);
+    onSaveCovenantPreset(
+      nextPresetName.trim() || defaultPresetName,
+      recommendedOperatorNames,
+    );
   }
 
   function handleApplyPreset(presetId: string) {
