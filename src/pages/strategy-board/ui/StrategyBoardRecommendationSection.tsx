@@ -613,18 +613,28 @@ export function StrategyBoardRecommendationSection({
             ) : null}
 
             <div className={styles.recommendationLineupGrid}>
-              {recommendedOperators.map((operator) => (
-                <OperatorCard
-                  key={`recommended-${operator.id}`}
-                  covenantId="recommended"
-                  operator={operator}
-                  picked={pickedOperatorIdSet.has(operator.id)}
-                  selectedCovenantIdSet={selectedCovenantIdSet}
-                  selectedPrimaryCovenantIdSet={selectedPrimaryCovenantIdSet}
-                  topRightSlot={renderRecommendationActionMenu(operator)}
-                  onToggleOperator={onToggleOperator}
-                />
-              ))}
+              {recommendedOperators.map((operator) => {
+                const isMenuOpen = openedOperatorMenuId === operator.id;
+
+                return (
+                  <OperatorCard
+                    key={`recommended-${operator.id}`}
+                    covenantId="recommended"
+                    extraClassName={isMenuOpen ? styles.operatorCardMenuOpen : undefined}
+                    operator={operator}
+                    picked={pickedOperatorIdSet.has(operator.id)}
+                    selectedCovenantIdSet={selectedCovenantIdSet}
+                    selectedPrimaryCovenantIdSet={selectedPrimaryCovenantIdSet}
+                    topRightSlot={renderRecommendationActionMenu(operator)}
+                    wrapperClassName={
+                      isMenuOpen
+                        ? styles.recommendationPrimaryOperatorCardMenuOpen
+                        : undefined
+                    }
+                    onToggleOperator={onToggleOperator}
+                  />
+                );
+              })}
               {Array.from({ length: recommendedLineup.emptySlotCount }, (_, index) => (
                 <button
                   className={clsx(

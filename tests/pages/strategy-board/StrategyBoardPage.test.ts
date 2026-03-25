@@ -892,7 +892,7 @@ describe('StrategyBoardPage', () => {
     expect(nonPrimaryOperatorCard.parentElement).not.toHaveClass(primaryCardClassName);
   });
 
-  it('点击推荐卡片操作按钮时不会触发卡片跳转，并会保留替换与禁用操作', () => {
+  it('点击推荐卡片操作按钮时不会触发卡片跳转，并会保留替换与移除操作', () => {
     const { selectedCovenantIds, primaryOperator } =
       findRecommendationPrimaryPriorityScenario();
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
@@ -909,13 +909,13 @@ describe('StrategyBoardPage', () => {
       screen.getByRole('button', { name: `替换推荐干员 ${primaryOperator.name}` }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: `禁用推荐干员 ${primaryOperator.name}` }),
+      screen.getByRole('button', { name: `移除推荐干员 ${primaryOperator.name}` }),
     ).toBeInTheDocument();
 
     openSpy.mockRestore();
   });
 
-  it('推荐阵容支持替换、空位补人和禁用指定干员', () => {
+  it('推荐阵容支持替换、空位补人和移除指定干员', () => {
     const {
       addOperator,
       replacementOperator,
@@ -992,7 +992,7 @@ describe('StrategyBoardPage', () => {
       }),
     );
     fireEvent.click(
-      screen.getByRole('button', { name: `禁用推荐干员 ${replacementOperator.name}` }),
+      screen.getByRole('button', { name: `移除推荐干员 ${replacementOperator.name}` }),
     );
 
     expect(

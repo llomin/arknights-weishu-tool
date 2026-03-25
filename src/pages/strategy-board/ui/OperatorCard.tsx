@@ -29,6 +29,7 @@ export interface OperatorCardProps {
   selectedCovenantIdSet: Set<string>;
   selectedPrimaryCovenantIdSet: Set<string>;
   topRightSlot?: ReactNode;
+  wrapperClassName?: string;
 }
 
 export function OperatorCard({
@@ -42,6 +43,7 @@ export function OperatorCard({
   selectedCovenantIdSet,
   selectedPrimaryCovenantIdSet,
   topRightSlot,
+  wrapperClassName,
 }: OperatorCardProps) {
   const isRecommendedCard = covenantId === 'recommended';
   const isRecommendedPrimaryOperatorCard =
@@ -194,7 +196,10 @@ export function OperatorCard({
 
   if (isRecommendedPrimaryOperatorCard) {
     return (
-      <div key={operatorCardKey} className={styles.recommendationPrimaryOperatorCard}>
+      <div
+        key={operatorCardKey}
+        className={clsx(styles.recommendationPrimaryOperatorCard, wrapperClassName)}
+      >
         {card}
       </div>
     );

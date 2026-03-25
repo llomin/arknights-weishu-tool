@@ -101,14 +101,23 @@ describe('StrategyBoard sections', () => {
     expect(css).toMatch(
       /\.operatorCard\s*\{[\s\S]*z-index:\s*0;/,
     );
+    expect(css).not.toMatch(
+      /\.operatorCard > \*\s*\{[^}]*z-index:\s*1;[^}]*\}/,
+    );
     expect(css).toMatch(
-      /\.operatorCard:hover,\s*\.operatorCard:focus-within\s*\{[\s\S]*z-index:\s*6;/,
+      /\.operatorCard:hover,\s*\.operatorCard:focus-within,\s*\.operatorCardMenuOpen\s*\{[\s\S]*z-index:\s*6;/,
+    );
+    expect(css).toMatch(
+      /\.operatorTopRow\s*\{[\s\S]*z-index:\s*1;/,
     );
     expect(css).toMatch(
       /\.operatorActionSlot\s*\{[\s\S]*width:\s*34px;[\s\S]*overflow:\s*visible;[\s\S]*z-index:\s*7;[\s\S]*pointer-events:\s*auto;/,
     );
     expect(css).toMatch(
       /\.operatorActionButton\s*\{[\s\S]*opacity:\s*1;[\s\S]*transform:\s*translateX\(0\);/,
+    );
+    expect(css).toMatch(
+      /\.operatorActionButton\s*\{[\s\S]*display:\s*inline-flex;[\s\S]*align-items:\s*center;[\s\S]*justify-content:\s*center;[\s\S]*line-height:\s*1;/,
     );
     expect(css).toMatch(
       /\.operatorActionPanel\s*\{[\s\S]*top:\s*0;[\s\S]*left:\s*calc\(100% \+ 8px\);[\s\S]*right:\s*auto;[\s\S]*z-index:\s*12;[\s\S]*opacity:\s*0;[\s\S]*visibility:\s*hidden;[\s\S]*pointer-events:\s*none;[\s\S]*transform:\s*translate\(4px,\s*-2px\);/,
@@ -119,10 +128,101 @@ describe('StrategyBoard sections', () => {
       /\.operatorActionSlotVisible \.operatorActionPanel\s*\{[\s\S]*opacity:\s*1;[\s\S]*visibility:\s*visible;[\s\S]*pointer-events:\s*auto;[\s\S]*transform:\s*translate\(0,\s*-2px\);/,
     );
     expect(css).toMatch(
+      /\.recommendationPrimaryOperatorCard:hover,\s*\.recommendationPrimaryOperatorCard:focus-within,\s*\.recommendationPrimaryOperatorCardMenuOpen\s*\{[\s\S]*z-index:\s*6;/,
+    );
+    expect(css).toMatch(
       /\.operatorActionItemDanger\s*\{[\s\S]*color:\s*#a65f66;/,
     );
     expect(css).toMatch(
       /\.operatorActionItemDanger:hover\s*\{[\s\S]*background:\s*rgba\(252,\s*241,\s*242,\s*0\.98\);[\s\S]*color:\s*#8d5057;/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.operatorActionSlot\s*\{[\s\S]*width:\s*28px;/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.operatorActionButton\s*\{[\s\S]*flex:\s*0 0 28px;[\s\S]*width:\s*28px;[\s\S]*min-height:\s*22px;[\s\S]*font-size:\s*11px;/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.operatorActionPanel\s*\{[\s\S]*left:\s*auto;[\s\S]*right:\s*calc\(100% \+ 6px\);[\s\S]*transform:\s*translate\(-4px,\s*-2px\);/,
+    );
+  });
+
+  it('adds explicit menu-open stacking classes to the recommended card and primary wrapper after opening the menu', () => {
+    const operator = operators.find((item) =>
+      item.covenants.some((covenantId) =>
+        primaryCovenants.some((covenant) => covenant.id === covenantId),
+      ),
+    );
+    const operatorCardMenuOpenClassName = styles.operatorCardMenuOpen;
+    const recommendationPrimaryOperatorCardMenuOpenClassName =
+      styles.recommendationPrimaryOperatorCardMenuOpen;
+    const recommendationPrimaryOperatorCardClassName =
+      styles.recommendationPrimaryOperatorCard;
+
+    if (
+      !operator ||
+      !operatorCardMenuOpenClassName ||
+      !recommendationPrimaryOperatorCardMenuOpenClassName ||
+      !recommendationPrimaryOperatorCardClassName
+    ) {
+      throw new Error('缺少用于推荐菜单提层测试的干员或样式类');
+    }
+
+    const primaryCovenantId = operator.covenants.find((covenantId) =>
+      primaryCovenants.some((covenant) => covenant.id === covenantId),
+    );
+
+    if (!primaryCovenantId) {
+      throw new Error('未找到用于推荐菜单提层测试的主盟约');
+    }
+
+    render(
+      createElement(StrategyBoardRecommendationSection, {
+        availableOperators: [operator],
+        currentRecommendedOperatorIds: [operator.id],
+        maxPopulation: 8,
+        pickedOperatorIdSet: new Set<string>(),
+        recommendedLineup: {
+          operators: [operator],
+          requirements: [
+            {
+              id: primaryCovenantId,
+              name: primaryCovenantId,
+              targetCount: 1,
+            },
+          ],
+          matchedCounts: {
+            [primaryCovenantId]: 1,
+          },
+          maxPopulation: 8,
+          emptySlotCount: 0,
+          reason: null,
+        },
+        recommendedOperators: [operator],
+        removedOperators: [],
+        selectedCovenantCount: 1,
+        selectedCovenantIdSet: new Set([primaryCovenantId]),
+        selectedPrimaryCovenantIdSet: new Set([primaryCovenantId]),
+        onRestoreRemovedOperators: vi.fn(),
+        onToggleOperator: vi.fn(),
+        onToggleRemovedOperator: vi.fn(),
+      }),
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: `推荐卡片操作 ${operator.name}` }),
+    );
+
+    const operatorCard = screen
+      .getByRole('button', { name: `推荐卡片操作 ${operator.name}` })
+      .closest(`.${styles.operatorCard}`);
+    const primaryWrapper = operatorCard?.closest(
+      `.${recommendationPrimaryOperatorCardClassName}`,
+    );
+
+    expect(operatorCard).toHaveClass(operatorCardMenuOpenClassName);
+    expect(primaryWrapper).toHaveClass(
+      recommendationPrimaryOperatorCardMenuOpenClassName,
     );
   });
 
@@ -170,9 +270,9 @@ describe('StrategyBoard sections', () => {
       screen.getByLabelText(`替换推荐干员 ${operator.name}`),
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText(`禁用推荐干员 ${operator.name}`),
+      screen.getByLabelText(`移除推荐干员 ${operator.name}`),
     ).toBeInTheDocument();
-    expect(screen.getByText('禁用')).toBeInTheDocument();
+    expect(screen.getByText('移除')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: `推荐卡片操作 ${operator.name}` }),
     ).toBeInTheDocument();
@@ -204,10 +304,25 @@ describe('StrategyBoard sections', () => {
       /\.recommendationPickerOverlay\s*\{[\s\S]*background:\s*rgba\(27,\s*39,\s*52,\s*0\.28\);/,
     );
     expect(css).toMatch(
-      /\.recommendationPicker\s*\{[\s\S]*width:\s*min\(960px,\s*calc\(100vw - 32px\)\);[\s\S]*max-height:\s*calc\(100vh - 40px\);[\s\S]*overflow:\s*auto;/,
+      /\.recommendationPickerOverlay\s*\{[\s\S]*overflow:\s*auto;/,
+    );
+    expect(css).toMatch(
+      /\.recommendationPicker\s*\{[\s\S]*width:\s*min\(960px,\s*calc\(100vw - 32px\)\);[\s\S]*max-height:\s*calc\(100vh - 40px\);[\s\S]*overflow:\s*auto;[\s\S]*margin:\s*auto;/,
     );
     expect(css).toMatch(
       /\.recommendationCandidateGrid\s*\{[\s\S]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationPickerOverlay\s*\{[\s\S]*padding:\s*12px;/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationPicker\s*\{[\s\S]*width:\s*min\(100%,\s*calc\(100vw - 24px\)\);[\s\S]*max-height:\s*calc\(100dvh - 24px\);/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationCandidateGrid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);[\s\S]*gap:\s*8px;/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 720px\)\s*\{[\s\S]*\.recommendationCandidateButton\s*\{[\s\S]*min-height:\s*72px;[\s\S]*padding:\s*10px;/,
     );
   });
 

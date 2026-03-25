@@ -911,6 +911,7 @@
   z-index: 20;
   display: grid;
   place-items: center;
+  overflow: auto;
   padding: 20px 16px;
   background: rgba(27, 39, 52, 0.28);
   backdrop-filter: blur(4px);
@@ -922,6 +923,7 @@
   width: min(960px, calc(100vw - 32px));
   max-height: calc(100vh - 40px);
   overflow: auto;
+  margin: auto;
   padding: 14px;
   border: 1px solid rgba(78, 125, 95, 0.16);
   border-radius: 16px;
@@ -1096,11 +1098,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
   gap: 8px;
 }
 
 .recommendationCandidateName {
   display: block;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   font-size: 14px;
@@ -1545,11 +1549,11 @@
 
 .operatorCard > * {
   position: relative;
-  z-index: 1;
 }
 
 .operatorCard:hover,
-.operatorCard:focus-within {
+.operatorCard:focus-within,
+.operatorCardMenuOpen {
   z-index: 6;
   transform: translateY(-1px);
   box-shadow:
@@ -1570,7 +1574,8 @@
 }
 
 .recommendationPrimaryOperatorCard:hover,
-.recommendationPrimaryOperatorCard:focus-within {
+.recommendationPrimaryOperatorCard:focus-within,
+.recommendationPrimaryOperatorCardMenuOpen {
   z-index: 6;
 }
 
@@ -1584,6 +1589,8 @@
 }
 
 .operatorTopRow {
+  position: relative;
+  z-index: 1;
   display: flex;
   height: var(--strategy-card-top-row-height);
   align-items: center;
@@ -1766,9 +1773,12 @@
 }
 
 .operatorActionButton {
+  display: inline-flex;
   flex: 0 0 34px;
   width: 34px;
   min-height: 24px;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 1px solid rgba(88, 104, 134, 0.16);
   border-radius: 10px;
@@ -1778,6 +1788,7 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  line-height: 1;
   opacity: 1;
   transform: translateX(0);
   transition:
@@ -2218,6 +2229,63 @@
 
   .recommendationSectionWithRemovedPanel {
     padding-right: 12px;
+  }
+
+  .recommendationPickerOverlay {
+    padding: 12px;
+  }
+
+  .recommendationPicker {
+    width: min(100%, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .recommendationPickerControls {
+    gap: 8px;
+  }
+
+  .recommendationPickerFilterRow {
+    gap: 6px;
+  }
+
+  .recommendationCandidateGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .recommendationCandidateButton {
+    min-height: 72px;
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .recommendationCandidateTopRow {
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .recommendationCandidateName {
+    font-size: 13px;
+  }
+
+  .operatorActionSlot {
+    width: 28px;
+  }
+
+  .operatorActionButton {
+    flex: 0 0 28px;
+    width: 28px;
+    min-height: 22px;
+    border-radius: 9px;
+    font-size: 11px;
+  }
+
+  .operatorActionPanel {
+    left: auto;
+    right: calc(100% + 6px);
+    transform: translate(-4px, -2px);
   }
 
   .operatorGrid {
